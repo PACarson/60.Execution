@@ -2,8 +2,24 @@
 =====================================================================
 EXECUTION OS — BUSINESS RULES
 =====================================================================
-Status: All rules below are Planned — zero code exists, so no rule
-has actually been implemented or tested yet. Do not read "Planned"
+Status: All rules below are Planned — no rule has actually been
+implemented or tested yet. (Updated 2026-10-24: this line read "zero
+code exists", true when written, stale since Slice 0 began. The
+Foundation files now built — see 00_Project_State.js — contain no
+Engine that enforces a rule below, and no runtime file references a
+BR-n rule (checked 2026-10-24); per-rule status was not otherwise
+re-audited. Updated 2026-10-26: 15_TruthEngine.js's header now cites
+BR-10, so that "no runtime file references a BR-n rule" holds only as
+of 2026-10-24. That file takes a tab name only and always writes to
+Config's own Spreadsheet, which structurally supports BR-10 for its
+own writes — sandbox-tested only, and not an enforcement: it cannot
+detect EXEC_OS_SPREADSHEET_ID being pointed at a Domain Spreadsheet,
+and the rule's real subject, Reference sync, is unbuilt. BR-10 stays
+Planned. Updated 2026-10-31: 90_UnitTests.js's header cites BR-10 too.
+Its Domain-tab guard stops that one function's own run when the
+configured Spreadsheet holds a tab with a Domain OS name — a best-effort
+stop, not an enforcement, sandbox-tested only; BR-10 still stays
+Planned.) Do not read "Planned"
 as "low confidence" — it means "designed, not yet built," per UEF's
 own status discipline (do not disguise a design decision as an
 implemented one).

@@ -5,7 +5,20 @@ EXECUTION OS — PROJECT CONSTITUTION
 Status: Accepted content, Proposed overall (see 00_Project_State.js)
 Version: derived from Execution OS Architecture Design v0.8
 Date: 2026-07-25 (this extraction: 2026-07-26)
-Code status: ZERO — this project has no implementation yet.
+Code status (updated 2026-10-31): Slice 0 — Foundation in progress.
+  Seven runtime files built and sandbox-tested (154/154), none verified
+  in real GAS, plus a GAS-native verification gate for 15_TruthEngine.js
+  (90_UnitTests.js; 65/65 sandbox tests of the gate itself, not yet run
+  in Apps Script) — 00_Project_State.js is the authoritative record.
+  (This line read "ZERO — this project has no implementation yet": true
+  when written 2026-07-25/26, stale since the first checkpoint
+  2026-09-12/14; it read "Six ... (100/100)" until 15_TruthEngine.js,
+  2026-10-26; the gate was added 2026-10-31.)
+Governance updated 2026-11-01 (no code changed): a WORKING RULES block
+  (ADR-019, ADR-020, both Accepted) and a PROPOSED PRACTICES block
+  (ADR-021 to ADR-024, not ratified by the owner) were added below. The
+  Code status above is unchanged: nothing was built or run on
+  2026-11-01.
 Depends On: UEF >= 1.12, Blueprint >= 1.2 (see ADR-014 in 00_ADR_Log.js).
   UEF v1.12's full primary text was read directly 2026-09-12 (Stable,
   2026-08-16) — this line previously read ">= 1.3" based on the only
@@ -141,6 +154,72 @@ that follow directly and already apply to decisions already made:
   - No real concurrency beyond LockService, and LockService is
     per-script only — it does not coordinate across projects sharing
     the Domain backend Sheet.
+
+Owner-stated working practice (2026-10-27; the owner's words: "我所有的
+os都是在gas跑通的" — every one of the owner's OSes is made to work in
+real Google Apps Script), recorded as given. Read it as: the Node
+sandbox passes so far are a preliminary check, and the owner's own
+practice is to make each OS work in real GAS. Whether that becomes a
+formal Definition-of-Done criterion is open item 9 in 00_Project_
+State.js — not decided here. It does not say that any Execution OS file
+has been run in GAS: no record of that exists. (Added 2026-10-31: the
+tool for making that record for 15_TruthEngine.js now exists —
+runTruthEngineGate() in 90_UnitTests.js, run by hand in the Apps Script
+editor — but it has not been run, so the sentence above still holds.)
+
+CHECKPOINT INTEGRITY GATE (ADR-018, added here 2026-10-08)
+---------------------------------------------------------------------
+Beyond UEF v1.12 S0.6's own File->Export->Read-back->Verify->Test->
+Evidence sequence (which verifies the file just written), every
+checkpoint on this project also: (1) re-verifies the working
+directory against the last accepted checkpoint before starting any
+new file — content-checked, not just filenames confirmed present;
+(2) repeats that check before declaring a checkpoint PASS, not only
+right after a dependency was first written. A missing dependency,
+an unclear recovery source, or an unexplained state difference is a
+STOP, never a mock or a memory-reconstructed stand-in for a real
+file. Adopted after a real container-reset incident silently
+dropped every previously-checkpointed file between sessions — see
+ADR-018 for the full record.
+
+WORKING RULES (ADR-019, ADR-020 — Accepted; added here 2026-11-01)
+---------------------------------------------------------------------
+Two rules govern how work on this project is done. Both are the
+owner's own instructions and were in force before they were written
+down as ADRs:
+  - Work boundary (ADR-019): only Execution OS is modified. Every other
+    OS (Personal Life OS, Personal AI Core, Rider OS, Reminder OS, any
+    other) is read-only reference: read, never written, never copied
+    into this repository. If something must change in a sibling, it is
+    flagged for the owner to apply. The owner's words, 2026-10-24:
+    "这个os是以execution os开发为主。其他的os只能read only".
+  - One file per explicit authorization (ADR-020): each file is built on
+    its own go-ahead (or each named step of a request). A checkpoint
+    ends with governance synced (BR-9), delivery, a "Scope respected"
+    statement and a STOP; the next file starts only on its own
+    go-ahead. The owner's words, 2026-11-01: "完成 checkpoint、
+    Governance/ADR 持久化及核对后就停止，不要继续 coding".
+
+PROPOSED PRACTICES (ADR-021 to ADR-024 — PROPOSED, NOT ratified by the
+owner; added here 2026-11-01)
+---------------------------------------------------------------------
+Built or in use, but the builder's choices. None is an approved
+decision and no later file may treat one as settled. Each is recorded in
+00_ADR_Log.js; the questions still open on each are in 00_Project_
+State.js (WHAT IS STILL OPEN):
+  - ADR-021 deployment packaging: .claspignore, appsscript.json and the
+    naming rules they imply (a name ending in _Test.js is Node-only and
+    never pushed; a name starting with 00_ is comment-only and never
+    pushed). Item 14.
+  - ADR-022 the TruthEngine write path, choices P1 to P9 in
+    15_TruthEngine.js's header. Item 11.
+  - ADR-023 real-GAS verification by the hand-run gate function in
+    90_UnitTests.js. The gate has not been run. Item 15.
+  - ADR-024 verification and reporting discipline: a sandbox result is
+    never reported as a real-GAS result; evidence is labelled by tier;
+    test code that guards a write path is checked by planting defects;
+    harness bugs, production defects and the builder's own mistakes are
+    reported separately. Item 9 could take it into a Definition of Done.
 
 DISAMBIGUATION NOTE
 ---------------------------------------------------------------------

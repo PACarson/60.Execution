@@ -2,21 +2,31 @@
 =====================================================================
 EXECUTION OS — ADR LOG (project-local, per UEF S0.7)
 =====================================================================
-18 ADRs, ADR-000 through ADR-017, all Status: Accepted except where
-noted. "Accepted" here means Steven confirmed the decision across
+25 ADRs, ADR-000 through ADR-024 (updated 2026-11-01; it read "19
+ADRs, ADR-000 through ADR-018" until then). ADR-000 through ADR-020
+are Status: Accepted except where noted. ADR-021 through ADR-024 are
+Status: PROPOSED: they record engineering choices that are built or in
+use but that the owner has NOT confirmed — they are not approved
+decisions, and no later file may treat them as settled. Questions on
+which no decision exists at all are listed after the ADRs, under
+PENDING DECISIONS; they are not ADRs. "Accepted" here means Steven
+confirmed the decision across
 this design conversation — either directly or by relaying a second
 AI's drafted recommendation without objection across multiple
-rounds. See checkpoint/handoff doc for the honest provenance note:
-almost none of these were confirmed in Steven's own freestanding
+rounds. See checkpoint/handoff doc for the honest provenance note
+(Execution_OS_Checkpoint_Handoff_2026-10-08.md, which stays the
+provenance record): almost none of these were confirmed in Steven's own freestanding
 prose ("yes, I approve X") — most came via relayed second-AI text
 that Steven transmitted without changes. Treat "Accepted" as
 "sufficiently confirmed to proceed," not as "personally
 adjudicated word-for-word" — flagged for the next window's judgment.
+(ADR-019 and ADR-020 are the exception: each rests on the owner's own
+words, quoted in the entry.)
 
 Full Evidence/Context/Options detail for each entry lives in
 Execution_OS_Architecture_v0.8.md section 9 (ADR-000 through
-ADR-014). ADR-015/016/017's full Context/Question/Options/Impact
-detail lives inline below, since they postdate v0.8 and have not
+ADR-014). ADR-015 through ADR-024's full Context/Question/Options/
+Impact detail lives inline below, since they postdate v0.8 and have not
 yet been folded into the Architecture doc's section 9 — see
 00_Project_State.js's open items for that pending sync. This file
 is the authoritative INDEX + DECISION record; the Architecture doc
@@ -223,9 +233,23 @@ ADR-012 — Execution OS uses an independent Spreadsheet
   list was not specifically checked. Per Decision 4 (2026-09-12):
   do not infer this list from filenames or memory — mark Unknown /
   Not Verified until read directly (see 00_File_Map.js).
+  Evidence update (2026-10-25, Verified this round — SOURCE LEVEL,
+  read-only): Personal Life OS's own code was read directly
+  (15_Setup.js setupSheets() and runDiagnostics(), 02_EventBus.js).
+  Of the nine tabs listed in the caveat above, six exist in Personal
+  Life OS's code (Events, Tasks, ActiveTasks, ArchiveTasks,
+  TaskStatistics, TaskFilters); the three Reminder tabs are not
+  created by it (Reminder OS's own, second-hand only); eight further
+  tabs exist that the list omitted (Projects, Workflows, Timeline,
+  Notes, Reviews, BusinessRules, WorkflowTemplates, TaskViewOrder).
+  This is NOT an inspection of the live Spreadsheet. The decision
+  itself rests on ownership-boundary reasoning, not on the tab list,
+  so this evidence does not by itself change it. Full detail:
+  00_File_Map.js, Dependency Rules.
   Related ADRs: Depends on ADR-000, ADR-002. Related to ADR-003.
   Review Trigger: When the Domain-shared backend's actual tab list is
-  verified against live code — currently Unknown / Not Verified.
+  verified against live code — currently source-verified only (see the
+  2026-10-25 evidence update above); not live-verified.
 
 ADR-013 — Execution OS's AI calls route through Personal AI Core (target architecture)
   Status: Accepted (Steven confirmed) | Date: 2026-07-25
@@ -420,6 +444,393 @@ ADR-017 — Execution OS's UEF adoption is a voluntary extension beyond UEF's ow
   real — see 00_Project_State.js's open flag) needs the same
   clarification, which would suggest a recurring ecosystem-level gap
   rather than an Execution-OS-specific one.
+
+ADR-018 — Checkpoint Integrity Gate: re-verify working-directory state before and after every file, not only right after writing it
+  Status: Accepted (Steven confirmed — invoked by name in both
+  subsequent authorizations after it was adopted, for
+  13_EventDefinitions.js and 14_Versioning.js) | Date: 2026-10-03
+  Context: starting the 12_Identity.js checkpoint, the live
+  container's working directory was found to contain only the 2
+  files just written -- every previously checkpointed file (5
+  governance files, the Architecture doc, 3 runtime files + tests)
+  had silently disappeared, almost certainly from a container reset
+  between sessions. No data was actually lost -- the last delivered
+  zip had everything -- but the loss went undetected until a test
+  happened to need a missing sibling file.
+  Question: UEF v1.12 S0.6's File->Export->Read-back->Verify->Test->
+  Evidence sequence verifies the NEW file being written at that
+  moment. What catches the case where files from EARLIER checkpoints
+  are silently no longer there before building on top of them?
+  Options Considered: (A) Rely on S0.6 alone, treat this as a rare,
+  one-off event not worth a standing process change. (B) Add an
+  explicit integrity check -- working directory vs. last accepted
+  checkpoint -- as its own gate, run both before starting new work
+  and again before accepting a checkpoint as passed.
+  Decision: (B).
+  Evidence: Verified this round -- direct reproduction of the
+  incident (ls showed only 2 files; the last delivered zip, checked
+  separately, had the complete prior state). The gap is structural,
+  not a one-off: S0.6's own sequence has no step that re-checks an
+  earlier checkpoint's files are still present, so the same failure
+  mode could recur identically on any future session.
+  Impact: every subsequent checkpoint (13_EventDefinitions.js,
+  14_Versioning.js, and this review itself) now opens with a working-
+  directory-vs-last-checkpoint check and content-verifies key files
+  rather than trusting filenames alone, and closes with the same
+  check repeated before declaring PASS. A missing dependency, unclear
+  recovery source, or unexplained state is a STOP, never a mock or a
+  memory-reconstructed stand-in for a real file.
+  Next Steps: none required now; the practice is already in active
+  use.
+  Related ADRs: complements, does not modify, UEF v1.12 S0.6's own
+  checkpoint sequence -- this is the missing read-side complement to
+  that write-side discipline. Flagged (00_Project_State.js, 2026-10-03)
+  as a candidate UEF Change Proposal for whoever maintains UEF's own
+  text; this project adopts the practice for itself in the meantime,
+  the same way it adopted S0.6 before confirming UEF's exact version
+  (see ADR-014).
+  Review Trigger: if a future incident shows this Gate itself missed
+  something (e.g. a partial/corrupted file that looks present but
+  isn't, which this Gate's content-checks only partially cover),
+  revisit its scope rather than assuming the existing check list is
+  complete.
+
+ADR-019 — Work boundary: only Execution OS is modified; every other OS is read-only reference
+  Status: Accepted (the owner's explicit instruction, quoted below) |
+  Date: 2026-09-12 or earlier (ADR-016's Context already cites it);
+  restated 2026-10-24; recorded as an ADR 2026-11-01
+  Context: this project works beside sibling projects (Personal Life
+  OS, Personal AI Core, Rider OS, Reminder OS and others) whose code is
+  needed as evidence. When the 2026-10-24 session began, the owner
+  restated the boundary: "这个os是以execution os开发为主。其他的os只能
+  read only" (this OS is the one being developed; the other OSes are
+  read only).
+  Question: may work on this project change anything inside a sibling
+  project, even a small cross-reference?
+  Options Considered: (A) allow minimal edits to a sibling where
+  Execution OS needs one. (B) every other project is read only; what
+  belongs there is flagged for the owner to apply.
+  Decision: (B).
+  Evidence: the owner's words above. ADR-016 already rejected an edit to
+  Personal AI Core's Main.js on this ground. Since 2026-10-24 every
+  checkpoint compared Personal Life OS byte for byte with its original
+  archive before and after the work, and found it identical.
+  Impact: a sibling's file is read, never written, copied into this
+  repository, or re-saved. Something that must change there is recorded
+  as a flag for the owner — for example, Personal Life OS's own
+  00_File_Map.js has no line naming Execution OS as a reader (see
+  00_File_Map.js, Dependency Rules). A copy of a sibling's file inside
+  this repository is wrong by definition: the four test files copied in
+  by mistake were removed on 2026-10-24.
+  Next Steps: none; it applies to every future file.
+  Related ADRs: ADR-012 and BR-10 state the same boundary for Sheet data
+  at runtime (Execution never writes a Domain's Sheet); this ADR states
+  it for the development work. ADR-016 cites it.
+  Review Trigger: only if the owner changes the instruction.
+
+ADR-020 — One file per explicit authorization; every checkpoint ends with a STOP
+  Status: Accepted (the owner's standing instruction; restated
+  2026-11-01: "完成 checkpoint、Governance/ADR 持久化及核对后就停止，不要
+  继续 coding") | Date: in force since the first checkpoint
+  (2026-09-12); recorded as an ADR 2026-11-01
+  Context: Slice 0 has been built one file at a time, each on its own
+  authorization ("one file plus its test"; the two named steps of the
+  2026-10-27 request). 00_Project_State.js records the rule as the
+  owner's standing instruction not to proceed to the next file
+  automatically, and every checkpoint entry ends with a "Scope
+  respected" statement. It was not an ADR.
+  Question: what authorizes the next unit of work, and what happens at
+  the end of a checkpoint?
+  Options Considered: (A) carry on to the next planned file once the
+  current one passes. (B) one explicit authorization per file (or per
+  named step); after the checkpoint's governance sync and delivery,
+  stop and wait.
+  Decision: (B). A checkpoint ends with: governance synced (BR-9),
+  delivery, a "Scope respected" statement, then STOP. Another file
+  starts only on its own go-ahead.
+  Evidence: the instruction as recorded in 00_Project_State.js
+  (GOVERNANCE STATUS and NEXT ACTION), applied at every checkpoint from
+  2026-09-12 to 2026-10-31.
+  Impact: the builder's reading, NOT the owner's words (PROPOSED): a
+  bare "继续" resumes work that was already authorized; it does not by
+  itself authorize a new file. Before starting one, name the file and
+  wait for the go-ahead.
+  Next Steps: none.
+  Related ADRs: ADR-018 (the integrity gate that opens and closes each
+  checkpoint); ADR-019.
+  Review Trigger: only if the owner changes the instruction.
+
+ADR-021 — Deployment packaging for the Apps Script project: the clasp ignore list, the manifest, and the file-naming rules they imply
+  Status: PROPOSED — implemented 2026-10-27 under the owner's
+  authorization ("先做1", step 1 of "先做1，然后做2") but not confirmed rule
+  by rule; nothing has been pushed | Date: 2026-10-27; recorded
+  2026-11-01
+  Context: the owner stated on 2026-10-27 that this OS runs in Google
+  Apps Script ("这os是放在google app script里运行"). A read-only audit
+  found that none of the three repository snapshots held .clasp.json,
+  .claspignore or appsscript.json, and that clasp's default would push
+  every .js file: the Node-only test files (they call require and
+  process, which Apps Script does not have) and the comment-only
+  governance files too. Loaded together, the test files and the runtime
+  files fail (a global is declared twice), and each test file alone
+  fails.
+  Question: how does this flat repository become an Apps Script project
+  without pushing files that cannot run there?
+  Options Considered: (A) clasp's default ignore list — pushes the
+  tests: broken. (B) keep the flat layout; a custom .claspignore
+  excludes by file name; an appsscript.json pins the runtime. (C) move
+  tests and governance files into subfolders and set a root directory —
+  changes a layout the owner already uses.
+  Decision (PROPOSED): (B). .claspignore holds two patterns (the
+  Node-only test suites; the 00_ governance files) plus clasp's own two
+  defaults, repeated because a custom file replaces the defaults.
+  appsscript.json: runtime V8, exception logging STACKDRIVER, time zone
+  Asia/Singapore, no explicit scopes, no advanced services.
+  File-naming rules that follow — in effect because the files exist, not
+  confirmed by the owner: a name ending in _Test.js is a Node-only suite
+  and is never pushed; a name starting with 00_ is a comment-only
+  governance file and is never pushed; every other .js, .gs or .html
+  file IS pushed, so a file that must run in Apps Script must use
+  neither form, and a file that calls require or process must end in
+  _Test.js. Expected push set today: 9 files (the 7 runtime files,
+  90_UnitTests.js, appsscript.json).
+  Evidence: CONFIRMED by reading clasp's source (tags v3.4.1 and
+  v2.5.0): a custom ignore file replaces the default; comments are not
+  stripped; 3.x filters with micromatch.not and dot:true; only .js, .gs
+  and .html files and appsscript.json are ever pushed (so Markdown needs
+  no entry); push sends the whole file set and asks before overwriting
+  the manifest. OFFICIAL DOCS (fetched 2026-10-27, through a page-
+  summarising tool): manifest fields, the runtimeVersion and
+  exceptionLogging values; updateContent "clears all the existing files
+  in the project". OBSERVED in Personal Life OS (read only): its
+  .claspignore, its appsscript.json and the key names of its
+  .clasp.json. PROPOSED: the time zone (copied from that sibling), the
+  leading double-star-and-slash form of both patterns, repeating the
+  defaults, automatic scope detection. Verified only by a scratch
+  harness (45 checks): clasp's own filtering calls re-run outside the
+  clasp binary, and the tracked files loaded into one shared scope in
+  five orders. The real clasp binary was never run (npm is unreachable
+  from the sandbox), so nothing here is verified against real clasp.
+  Impact: a file added later is pushed unless its name matches a
+  pattern; the expected push set must be re-counted whenever a file is
+  added (9 now).
+  Next Steps (owner side, 00_Project_State.js item 14): .clasp.json with
+  the owner's scriptId; compare with the live project before the first
+  push (a push replaces the whole remote file set); the time zone; the
+  command clasp status should list exactly 9 files.
+  Related ADRs: ADR-006 (the 00_ prefix convention); ADR-023
+  (90_UnitTests.js is a pushed file).
+  Review Trigger: the owner's first real clasp status or push; the
+  owner's confirmation or change of any rule above; a clasp release
+  that reads its ignore file differently.
+
+ADR-022 — TruthEngine write path: one append-only, plain-text-protected, script-locked row write (15_TruthEngine.js, choices P1 to P9)
+  Status: PROPOSED — built 2026-10-26 under the owner's authorization
+  for that one file; the choices are the builder's and are not
+  confirmed; never run in real Apps Script | Date: 2026-10-26; recorded
+  2026-11-01
+  Context: 00_File_Map.js defines 15_TruthEngine.js only as the "generic
+  validated safe append/write owner, per UCR6". UCR6's primary text is
+  not in this repository (open item 12), so "validated" and "safe" had
+  no definition. Personal Life OS's Known Limitation 11 (live-verified
+  there, for date/time-shaped strings only) shows that appendRow ignores
+  a plain-text format set beforehand, while setNumberFormat('@')
+  followed by setValues keeps the string.
+  Question: what does "validated, locked, safe" mean for a row write
+  here, and which of those rules will bind later files such as
+  16_EventLog.js?
+  Options Considered: (A) appendRow into pre-formatted ranges — rejected
+  on the sibling's own evidence. (B) the write path itself protects every
+  non-empty string — chosen. (C) a wider API (update, upsert, delete)
+  from the start — deferred, no real caller yet (EP3).
+  Decision (PROPOSED): the header of 15_TruthEngine.js (P1 to P9) is the
+  one source of the exact wording (EP2). In short: P1 one public
+  function, append(tabName, record), with no Spreadsheet-ID parameter,
+  so a Domain Spreadsheet is unreachable through it; P2 append-only
+  (update-by-key deferred); P3 script lock, 10-second wait (a guess);
+  P4 returns { tabName, rowNumber }; P5 generic validation — a record
+  key that matches no header is rejected, never dropped; P6 every
+  non-empty string is written as plain text (setNumberFormat('@') on the
+  cell, then one setValues for the row, never appendRow) while numbers,
+  booleans and blanks keep their native types; P7 defensive grid growth
+  before a write past the last row; P8 no read-back; P9 logs name the
+  tab and the field names, never the values. SpreadsheetApp.flush() runs
+  before the lock is released (official docs).
+  Evidence: CONFIRMED (governance text in this repository: the File_Map
+  entry, Architecture S6.1, ADR-012 and BR-10, the Constitution's
+  Platform Constraints); OBSERVED (Personal Life OS's source, read
+  only); OFFICIAL DOCS (Lock: flush before release; waitLock throws on
+  timeout); NOT AVAILABLE (UCR6's text). Sandbox: 54 checks, and 28
+  planted defects each caught by at least one check. NOT verified in
+  real GAS: that Execution's own Spreadsheet leaves protected strings
+  alone (number-, date- and formula-shaped), a write past the grid, the
+  lock's mutual exclusion, flush-before-release. 90_UnitTests.js
+  (ADR-023) was built to observe several of these; it has not been run.
+  Impact: every later file that writes a row calls TruthEngine.append; a
+  caller that wants a numeric cell must pass a number, because a
+  numeric-looking string is stored as text; the caller serializes
+  payloads (dates as ISO strings, objects through JSON.stringify).
+  Next Steps: the owner confirms or changes P1 to P9 (00_Project_State.js
+  item 11; most worth a call: P2, P3, P6, P7); someone with UEF v1.12
+  checks UCR6 (item 12); the first real run of the gate.
+  Related ADRs: ADR-012 (own Spreadsheet); ADR-023 (the gate that
+  observes it); ADR-018; BR-10.
+  Review Trigger: a real-GAS observation that contradicts P6 or P7 (a
+  formula-shaped string stored as a formula, a write past the grid
+  failing or dropping data); UCR6's text disagreeing; the first caller
+  needing update-by-key.
+
+ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
+  Status: PROPOSED — the owner asked for a GAS-native verification file
+  in the run...Gate() style on 2026-10-27 ("先做1，然后做2"); that request
+  is the basis. Built 2026-10-29 to 2026-10-31. The design below, the
+  test-scaffolding exception and the file name are the builder's choices
+  and await confirmation (00_Project_State.js item 15). The gate has NOT
+  been run in Apps Script. | Date: requested 2026-10-27; delivered
+  2026-10-31; recorded 2026-11-01
+  Context: the owner's practice is that every OS is made to work in real
+  GAS ("我所有的os都是在gas跑通的", 2026-10-27; 00_Project_Constitution.js,
+  PLATFORM CONSTRAINTS). Every test so far runs in a Node sandbox against
+  hand-built fakes; their handling of re-typed strings, a write past the
+  grid, an oversize cell, lock semantics and call time are assumptions.
+  Question: how does the owner get real-platform evidence for
+  15_TruthEngine.js, and how is it reported?
+  Options Considered: (A) by hand in the Sheet — repeatable by no one,
+  nothing recorded. (B) a hand-run function in the Apps Script project
+  that writes only its own temporary tabs in Execution's own
+  Spreadsheet, logs one line per check and deletes its tabs (the pattern
+  of Personal Life OS's run...Gate() functions). (C) additionally a
+  protocol with two overlapping executions, for mutual exclusion and
+  flush-before-release.
+  Decision (PROPOSED): (B), in 90_UnitTests.js (File_Map's slot name,
+  used provisionally), with one editor-runnable function,
+  runTruthEngineGate(). Statuses PASS, FAIL, INFO, INCONCLUSIVE,
+  SKIPPED; timings are reported, never judged (there is no evidence for
+  a threshold); every row under test goes through TruthEngine.append.
+  (C) is NOT built: it would be speculative (EP3); only if the owner
+  asks. Two choices are exceptions or duplications on purpose: the gate
+  writes its temp tabs, their header rows, its control rows and one raw
+  out-of-grid write directly rather than through TruthEngine (using
+  Schema.ensureTab would put an unverified second file inside a gate
+  about TruthEngine); and its guard against a Domain-named tab copies
+  the list from 00_File_Map.js (an EP2 duplication accepted for a
+  safety stop; File_Map wins if they differ).
+  Evidence: sandbox only — the gate's own suite has 65 checks, all
+  passing, and 52 deliberate breakages of the gate's own checks are all
+  caught (my own selection, not exhaustive); the deployment harness has
+  45 checks. API names rest on tiers (OFFICIAL DOCS, TYPE DECLARATIONS,
+  OBSERVED in the sibling, PROPOSED) printed in the gate's header; the
+  getDisplayValues, getNumberFormats and insertSheet entries were not
+  read on the official pages. A wrong name makes the affected group
+  report INCONCLUSIVE, never a TruthEngine verdict.
+  Impact: the first real run is the first real-GAS evidence this project
+  would have, for P3, P6, P7 and the lock behavior. One execution cannot
+  show — and REAL_GAS_REQUIRED keeps listing — mutual exclusion between
+  two overlapping executions, the effect of flushing before the lock is
+  released, getLastRow on long-lived tabs, and latency under contention.
+  The file is pushed (its name matches neither ignore pattern), so it
+  sits in the Apps Script project until removed.
+  Next Steps: owner side — push, set EXEC_OS_SPREADSHEET_ID, run once,
+  return the whole Execution log (00_Project_State.js item 14f); decide
+  item 15 (the exception, the file name, whether the file stays in the
+  pushed set after its first run).
+  Related ADRs: ADR-022 (the subject); ADR-021 (it is a pushed file);
+  ADR-012 and BR-10 (the guard); ADR-018; ADR-024.
+  Review Trigger: the first real run's log; the owner declining the
+  exception or renaming the file.
+
+ADR-024 — Verification and reporting discipline applied at every checkpoint
+  Status: PROPOSED — a practice in use since the first checkpoint and
+  made more explicit in this window; the owner has not ratified it as a
+  rule | Date: in use since 2026-09-12; recorded 2026-11-01
+  Context: every file so far is tested only in a Node sandbox, while the
+  owner's own practice is real GAS (ADR-023). Without a stated
+  discipline, "tests pass" is easily read as "works in production".
+  Question: how are results, evidence and mistakes reported so that a
+  later reader, or a new window, cannot mistake a sandbox pass for
+  real-platform verification?
+  Options Considered: (A) report pass counts only. (B) report each
+  result with what it was run against, what it did not cover, and where
+  each claim comes from.
+  Decision (PROPOSED): (B), as these rules.
+    1. A result obtained in the sandbox is never reported as verified in
+       real GAS; each file keeps a REAL_GAS_REQUIRED list and the
+       checkpoint entry repeats it.
+    2. A statement about a platform API or a document carries its
+       evidence tier: CONFIRMED (governance text in this repository),
+       OFFICIAL DOCS (with the date fetched, and what the fetch tool
+       could not show), TYPE DECLARATIONS (a secondary mirror), OBSERVED
+       (a sibling project's source, read only), PROPOSED (the builder's
+       own choice).
+    3. Test code that guards a write path is itself checked by planting
+       deliberate defects, one at a time, in throw-away copies outside
+       the project (28 for TruthEngine, 52 for the gate); the number is
+       reported together with the fact that the builder chose the
+       selection. A check that no planted defect needs is removed, or
+       the gap that let a defect survive is closed.
+    4. A harness bug, a production defect and the builder's own mistake
+       are reported separately and plainly in the checkpoint entry.
+    5. When an instruction cannot be carried out (for example "store
+       this in memory" when no memory tool exists), say so and record it
+       where it can travel — the governance files — and never claim it
+       was done.
+    6. A governance comment block holds exactly one comment terminator,
+       and no text inside it may contain the two-character sequence that
+       ends a comment (so no glob written with a double star and a
+       slash).
+  Evidence: applied at the 15_TruthEngine.js, deployment-configuration
+  and 90_UnitTests.js checkpoints; each entry in 00_Project_State.js
+  shows it, including what it caught — a log entry whose text would have
+  ended its file's comment early (2026-10-27), and redundant checks in
+  the gate found only by planting defects in it (2026-10-30).
+  Impact: a new window reads a result together with its limits; none of
+  these rules changes what a file does.
+  Next Steps: the owner confirms, changes or drops rules 1 to 6; if
+  confirmed, they could become part of a Definition of Done
+  (00_Project_State.js item 9).
+  Related ADRs: ADR-018 (the integrity gate); ADR-022; ADR-023.
+  Review Trigger: the owner's first real-GAS result; any case where a
+  rule here made a checkpoint report something wrong.
+
+---------------------------------------------------------------------
+PENDING DECISIONS — NO DECISION HAS BEEN MADE. NOT ADRs, NOT ACCEPTED,
+NOT PROPOSED. Listed 2026-11-01 so that none is mistaken for settled.
+The open item named in each line, in 00_Project_State.js, holds the
+detail (EP2); this list only points to it.
+---------------------------------------------------------------------
+  - Definition of Ready / Done / Production-Ready: the 2026-09-12
+    verdicts are stale and were never re-determined; whether real-GAS
+    verification becomes a Definition-of-Done criterion, and whether the
+    verdicts apply per file, per slice or project-wide. (item 9)
+  - Domain read mechanism: a Spreadsheet-level read (as ADR-003 and
+    ADR-012 are written) versus Personal Life OS's QueryEngine or a
+    GAS-library call. Needed before 50_DomainAdapterRegistry.js and
+    51_ReferenceSync.js. (item 10)
+  - Where 16_EventLog.js's read half gets its Sheet access, since
+    15_TruthEngine.js has no read function. (item 13)
+  - UCR6's primary text, which is not in this repository. (item 12)
+  - Owner-side deployment: .clasp.json and the scriptId, comparing with
+    the live project before the first push, the manifest time zone,
+    EXEC_OS_SPREADSHEET_ID. (item 14; ADR-021)
+  - The gate's test-scaffolding exception, the file name
+    90_UnitTests.js, and whether the file stays in the pushed set after
+    its first run. (item 15; ADR-023)
+  - Whether to build a protocol with two overlapping executions
+    (mutual exclusion; flush-before-release). Not built; only if the
+    owner asks. (ADR-023)
+  - Where the scratch verification tools live: outside the repository
+    so far. (item 16)
+  - Syncing Execution_OS_Architecture_v0.8.md section 9, and its stale
+    header, with ADR-013 through ADR-024. (item 3)
+  - RUNTIME numbering: a missing 26_ReferenceEngine.js against the
+    existing 26_WeekViewEngine.js, and the shared-directory numbering
+    question. (the notes in 00_File_Map.js)
+  - Reminder OS's scheduling overlap, Rider OS's own bot, the unrelated
+    "Decision OS" draft, UEF's Scope line, the ecosystem-level
+    Universal-Recovery-Manifest. (items 1, 5, 6, 7, 8)
+  - Whether the Checkpoint Integrity Gate (ADR-018) and a UEF Scope
+    clarification (ADR-017) are raised as UEF Change Proposals. Not
+    Execution OS's call.
 
 ---------------------------------------------------------------------
 CANDIDATE ARCHITECTURE PRINCIPLES — NOT ADRs, NOT ACCEPTED, NOT
