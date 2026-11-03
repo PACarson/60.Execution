@@ -8,6 +8,14 @@ Owns:        The single write path for a data row into Execution OS's
               write per call. Schema-agnostic on purpose.
 Built:       2026-10-26, seventh real runtime file, per this specific
               authorization (15_TruthEngine.js only).
+Changed:     2026-11-03, at the owner's explicit go-ahead, after the first
+              real Apps Script run of the gate (90_UnitTests.js) found two
+              defects in this file. Added P10 (per-cell length guard) and
+              P11 (apostrophe prefix for a leading "=" or apostrophe) and
+              updated the evidence notes below. The write sequence is
+              otherwise unchanged. The new behavior has been exercised only
+              in the Node sandbox; the next real run of the gate is its
+              first test on the real platform.
 
 GOVERNANCE SOURCE REVIEW, performed before writing any code (per
 ADR-018's Checkpoint Integrity Gate and this project's standing "no
@@ -79,10 +87,57 @@ and .../spreadsheet/sheet, fetched 2026-10-25:
     whether a string starting with "=" is parsed as a formula inside a
     plain-text cell. (Both are listed in the test file's
     REAL_GAS_REQUIRED section.)
+    [Updated 2026-11-03: both are now OBSERVED, see the next section:
+    the platform grows the grid by itself, and a leading "=" IS read as a
+    formula even inside a plain-text cell.]
 
-PROPOSED -- this file's own choices, not evidenced by anything above.
+OBSERVED IN REAL APPS SCRIPT -- this project's own gate, 90_UnitTests.js
+(GATE_VERSION 2026-10-31), run once, 2026-11-03 06:59 Asia/Kuala_Lumpur
+(2026-11-02T22:59Z), against Execution's own Spreadsheet "60.Execution"
+(one tab; locale en_US; Spreadsheet time zone Asia/Shanghai; script time
+zone Asia/Singapore). Evidence: the owner's copy of that Execution log.
+Result: PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4, 17010 ms.
+  - Control: the same 36 probe strings written WITHOUT the plain-text
+    format -- 23 of 36 were re-typed by the Spreadsheet (leading zeros,
+    scientific notation, all-digit and digits-e-digits hash-like,
+    trailing-zero decimal, negative integer, thousands separator,
+    percent, currency, parenthesised number, ISO date, clock time,
+    fractions, slashed dates, month and day, 12-hour time, small
+    exponent, TRUE and false as text, two formulas, a leading
+    apostrophe). The protection is needed.
+  - P6 as written kept 33 of the 36: every number-, date-, time-, hash-
+    and TRUE/false-shaped string. The 3 it did not keep: a string
+    starting with "=" is evaluated as a formula EVEN in a '@' cell
+    ("=1+1" read back as the number 2, a SUM formula as 3), and a first-
+    character apostrophe is consumed ("'quoted" read back as "quoted").
+  - Numbers, booleans and blanks kept their native types and got no
+    plain-text format.
+  - A raw setValues() one row past the grid was ACCEPTED and the grid
+    grew (4 to 5 rows): the platform copes by itself. The engine's own
+    growth step also worked (grid 3 to 4).
+  - A 50001-character string made setValues() fail with "Your input
+    contains more than the maximum of 50000 characters in a single
+    cell.", and the failed call still left a row behind (getLastRow()
+    went from 2 to 3; the log does not say which cells landed). This
+    file had no length check, so the failure surfaced mid-write.
+  - Five consecutive appends landed on consecutive rows. Time per append
+    with no contention: 554 to 929 ms over eight timed calls (the five
+    13-string-cell appends: min 652, avg 778, max 929 ms), with no clear
+    relation to the number of string cells.
+  - Within ONE execution a second getScriptLock() object acquired the
+    lock while the first still held it, so "released after success",
+    "released after failure" and the lock-timeout path cannot be
+    observed in a single execution (INCONCLUSIVE, INCONCLUSIVE,
+    SKIPPED). Mutual exclusion between two overlapping executions, and
+    flush-before-release, remain UNOBSERVED.
+
+PROPOSED -- this file's own choices. P1 to P9 were not evidenced by
+anything above when they were made; the 2026-11-03 observations bear on
+P3, P6 and P7 and are the evidence for P10 and P11 (each says so).
 Each is isolated (one constant or one private function) so it can be
-changed without touching the rest.
+changed without touching the rest. (P10 and P11 are one constant each
+plus a few lines in _toCell_; P10 also adjusts the advice in the
+message that _prepare_ throws.)
   P1  Public API is ONE function, append(tabName, record). It takes a
       tab name only, never a Spreadsheet ID: the Spreadsheet is always
       Config's, so a write to a Domain Spreadsheet is structurally
@@ -100,6 +155,9 @@ changed without touching the rest.
   P3  LOCK_WAIT_MS = 10000. Not evidenced (the sibling's one concrete
       value is 2000 ms for a user-facing gate). Chosen to outlast a few
       queued writes, since one write makes several Sheet calls.
+      [Observed 2026-11-03: one append took 554 to 929 ms with no
+      contention, so 10000 ms covers about ten queued appends of that
+      length. Behavior under contention is unobserved.]
   P4  Return value { tabName, rowNumber } -- the minimum a caller or a
       test needs in order to verify the write.
   P5  Generic validation only, no entity knowledge. tabName is a
@@ -125,18 +183,60 @@ changed without touching the rest.
       That Execution's Spreadsheet re-types those exact shapes is NOT
       observed. Guessing which shapes are dangerous is the failure mode
       Known Limitation 11 documents, hence every non-empty string.
+      [Updated 2026-11-03: now OBSERVED in Execution's own Spreadsheet,
+      see above. The mechanism keeps every number-, date-, time- and
+      hash-shaped string, but NOT a leading "=" or a leading apostrophe;
+      P11 adds a prefix for those two.]
   P7  Defensive grid growth: if the target row is past getMaxRows(),
       insert the missing row(s) first, because a write past the grid may
       throw (unverified, see above). Costs nothing when there is room.
+      [Observed 2026-11-03: the platform grows the grid by itself for a
+      raw write one row past it, so this guard is not needed there. It
+      stays: it works (gate group GR) and costs nothing when there is
+      room. Whether to remove it (EP3) is the owner's call.]
   P8  No read-back after the write: it would add I/O to every append
       (EP3). The returned rowNumber lets a caller, or a real-GAS gate,
       verify.
   P9  Log hygiene: a failure logs the tab name and the field NAMES,
       never field values, because values can carry user-typed text.
+  P10 Per-cell length guard (added 2026-11-03). A string whose WRITTEN
+      length is over MAX_CELL_CHARS (50000) is rejected in the argument
+      validation -- before the lock and before any Sheet call -- naming
+      the field and the length, never the text (P9). Evidence: OBSERVED
+      (above): the platform refuses a longer cell, but only after part
+      of the row has landed, so checking first is the only way this file
+      can avoid that partial row. The written length is one more for a
+      string that gets the P11 apostrophe. Not observed: that exactly
+      50000 is accepted (the gate probes 50001 only; the figure is the
+      platform's own wording). Length here is JavaScript string length
+      (UTF-16 units); the platform's counting unit is not known, so a
+      string of characters outside the basic plane may be refused a
+      little early, and a unit that counted more than this file does
+      could let one through that the platform then refuses, with the
+      partial row again. Any OTHER platform failure inside setValues()
+      that lands part of a row is also still possible; see DOES NOT OWN.
+  P11 Apostrophe prefix (added 2026-11-03). A string whose first
+      character is "=" or an apostrophe is written with one apostrophe
+      in front. Evidence: OBSERVED (above): with '@' set and one
+      setValues(), a leading "=" is still read as a formula and a leading
+      apostrophe is still consumed. NOT observed: that this prefix makes
+      the platform keep such text as typed. It is the usual way to enter
+      text that starts with "=" in Sheets and it fits the observed
+      consumption of an apostrophe, but the next real run of the gate
+      (group PT.A) is the test. If the prefix does not work, the
+      fallback is to reject such strings. Chosen by the first character
+      of the VALUE, never by field name or column, like P6. If the
+      platform consumes the prefix, a reader gets the original text back.
+      Not covered, and not probed: a string that starts with "+", "-" or
+      "@" and goes on like an expression (the gate's probes there were
+      "+3" and "-7", both kept as typed). If a later run shows one of
+      those being evaluated, the first-character rule in
+      _needsTextMarker_ is the one place to widen.
 
 Write sequence (everything after step 3 runs inside the lock, and any
 failure still releases it):
-  1. validate the arguments (no Sheet, no lock)
+  1. validate the arguments (no Sheet, no lock), including the per-cell
+     length limit (P10)
   2. read Config's Spreadsheet ID (fails fast if unset, before the lock)
   3. take the script lock
   4. open the Spreadsheet; find the tab (must already exist); read row
@@ -144,7 +244,8 @@ failure still releases it):
   5. target row = getLastRow() + 1; grow the grid if that is past
      getMaxRows()
   6. '@' on each non-empty string cell of that row; ONE setValues for
-     the whole row
+     the whole row (a string that starts with "=" or an apostrophe goes
+     in with one apostrophe in front, P11)
   7. SpreadsheetApp.flush(), then release the lock
 
 DOES NOT OWN (so none of it is here): schema and headers (11_Schema.js
@@ -156,7 +257,10 @@ error AFTER the write, e.g. a failed flush, leaves the outcome
 ambiguous, and this file is not idempotent); reads (no evidenced owner
 yet -- 16_EventLog's "append/read" must settle where its read half
 lives; this file exposes none, per EP3); atomicity across rows or tabs
-(none exists on this platform).
+(none exists on this platform); cleaning up a partly written row after
+a platform failure inside setValues() (the gate saw one on 2026-11-03;
+P10 removes that one cause; this file is append-only and deletes
+nothing).
 
 Depends on:  10_Config.js (Spreadsheet ID) and 60_Observability.js
               (AlertService, UCR3). NOT 11_Schema.js, 12_Identity.js,
@@ -189,6 +293,16 @@ const TruthEngine = (function() {
   // own Spreadsheet.
   const PLAIN_TEXT_FORMAT = '@';
 
+  // PROPOSED P10. The figure is the one the platform itself named when it
+  // refused a longer cell (OBSERVED 2026-11-03: "more than the maximum of
+  // 50000 characters in a single cell"). Exactly 50000 was not tried.
+  const MAX_CELL_CHARS = 50000;
+
+  // PROPOSED P11. The character put in front of a string that starts with
+  // "=" or with this same character. Not yet shown to work on the real
+  // platform; see the file header.
+  const TEXT_MARKER = '\'';
+
   // A short, log-safe description of a value's type. Uses
   // Object.prototype.toString rather than instanceof so it also works
   // for values created in another JS realm (e.g. a Node vm sandbox).
@@ -214,14 +328,41 @@ const TruthEngine = (function() {
     return names.map(function(name) { return '"' + name + '"'; }).join(', ');
   }
 
+  // PROPOSED P11: true for a string that the platform would not keep as
+  // typed even in a plain-text cell (OBSERVED 2026-11-03): one that starts
+  // with "=" (read as a formula) or with the marker character itself (the
+  // first one is consumed). Decided by the first character of the VALUE
+  // only, never by field name or column. An empty string has no first
+  // character and is never marked.
+  function _needsTextMarker_(text) {
+    const first = text.charAt(0);
+    return first === '=' || first === TEXT_MARKER;
+  }
+
   // Turns one caller-supplied value into { cell, protect } -- or
-  // { problem } if it is not an accepted type (PROPOSED P5).
+  // { problem } if it is not an accepted value (PROPOSED P5; for a string
+  // that is too long, also tooLong: true, PROPOSED P10).
   // protect === true means "write this cell as plain text" (P6).
   function _toCell_(value) {
     if (value === null || value === undefined) {
       return { cell: '', protect: false };
     }
     if (typeof value === 'string') {
+      // The length that matters is the one that will be written, so the
+      // P11 marker counts. Only the length goes into the message, never
+      // the text (P9).
+      const marked = _needsTextMarker_(value);
+      const writtenLength = value.length + (marked ? TEXT_MARKER.length : 0);
+      if (writtenLength > MAX_CELL_CHARS) {
+        return {
+          problem: 'a string of ' + writtenLength + ' characters when written (one cell holds at most ' +
+              MAX_CELL_CHARS + ')',
+          tooLong: true
+        };
+      }
+      if (marked) {
+        return { cell: TEXT_MARKER + value, protect: true };
+      }
       return { cell: value, protect: value !== '' };
     }
     if (typeof value === 'number') {
@@ -256,11 +397,18 @@ const TruthEngine = (function() {
     // not a write to the prototype.
     const cells = Object.create(null);
     const problems = [];
+    let wrongType = false;
+    let tooLong = false;
     let hasContent = false;
     fields.forEach(function(field) {
       const converted = _toCell_(record[field]);
       if (converted.problem) {
         problems.push('"' + field + '": ' + converted.problem);
+        if (converted.tooLong) {
+          tooLong = true;
+        } else {
+          wrongType = true;
+        }
         return;
       }
       cells[field] = converted;
@@ -269,9 +417,17 @@ const TruthEngine = (function() {
       }
     });
     if (problems.length > 0) {
-      throw new Error('record has unsupported value(s) -- ' + problems.join('; ') +
-          '. Only string, finite number, boolean, null and undefined are accepted; ' +
-          'serialize anything else (dates as ISO strings, payloads with JSON.stringify) before calling.');
+      // Each kind of problem gets only the advice that fits it.
+      const advice = [];
+      if (wrongType) {
+        advice.push('Only string, finite number, boolean, null and undefined are accepted; ' +
+            'serialize anything else (dates as ISO strings, payloads with JSON.stringify) before calling.');
+      }
+      if (tooLong) {
+        advice.push('Nothing was written. Shorten the value, or keep the text elsewhere and store ' +
+            'a reference to it.');
+      }
+      throw new Error('record has unsupported value(s) -- ' + problems.join('; ') + '. ' + advice.join(' '));
     }
     if (!hasContent) {
       // An all-blank row would not even count for getLastRow(), so the
@@ -419,14 +575,20 @@ const TruthEngine = (function() {
    * @param {string} tabName An existing tab. Never created here.
    * @param {Object} record {header name: value}. Values may be string,
    *     finite number, boolean, null or undefined (the last two become
-   *     a blank cell). Non-empty strings are stored as plain text.
+   *     a blank cell). Non-empty strings are stored as plain text, at
+   *     most 50000 characters each (P10). A string that starts with "="
+   *     or with an apostrophe is written with one apostrophe in front
+   *     (P11); the platform is expected to consume it, so a reader gets
+   *     the original text back.
    * @return {{tabName: string, rowNumber: number}} The 1-based sheet
    *     row that was written.
    * @throws {Error} (message already passed through AlertService) on
-   *     invalid arguments, unknown/ambiguous columns, a missing tab or
-   *     header, a lock timeout, or any Sheet/platform failure. After a
-   *     failure that happens AFTER the write (e.g. flush), whether the
-   *     row landed is not known to this file -- see DOES NOT OWN.
+   *     invalid arguments (including a string over the cell limit,
+   *     refused before anything is written), unknown/ambiguous columns,
+   *     a missing tab or header, a lock timeout, or any Sheet/platform
+   *     failure. After a failure that happens AFTER the write (e.g.
+   *     flush), whether the row landed is not known to this file -- see
+   *     DOES NOT OWN.
    */
   function append(tabName, record) {
     try {
