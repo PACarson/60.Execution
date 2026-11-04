@@ -99,12 +99,13 @@ zone Asia/Singapore). Evidence: the owner's copy of that Execution log.
 Result: PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4, 17010 ms.
   - Control: the same 36 probe strings written WITHOUT the plain-text
     format -- 23 of 36 were re-typed by the Spreadsheet (leading zeros,
-    scientific notation, all-digit and digits-e-digits hash-like,
-    trailing-zero decimal, negative integer, thousands separator,
-    percent, currency, parenthesised number, ISO date, clock time,
-    fractions, slashed dates, month and day, 12-hour time, small
-    exponent, TRUE and false as text, two formulas, a leading
-    apostrophe). The protection is needed.
+    scientific notation, all-digit hash-like, trailing-zero decimal,
+    negative integer, thousands separator, percent, currency,
+    parenthesised number, ISO date, clock time, fraction or short date,
+    slashed digits, month and day, year-first and month-first slashes,
+    12-hour time, small exponent, TRUE and false as text, two formulas, a
+    leading apostrophe). The other 13 stayed strings either way. The
+    protection is needed.
   - P6 as written kept 33 of the 36: every number-, date-, time-, hash-
     and TRUE/false-shaped string. The 3 it did not keep: a string
     starting with "=" is evaluated as a formula EVEN in a '@' cell
