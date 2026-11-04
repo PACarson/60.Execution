@@ -2,7 +2,12 @@
 =====================================================================
 EXECUTION OS — PROJECT STATE
 =====================================================================
-Last updated: 2026-11-01 (audit and persistence checkpoint, no code
+Last updated: 2026-11-03 (TruthEngine fix after the first real-GAS run
+of the gate: P10 per-cell length guard and P11 apostrophe prefix in
+15_TruthEngine.js, its test updated, governance synced — see its entry
+in the checkpoint log, WHAT IS STILL OPEN items 11, 14, 15, 17 and 18,
+and ADR-022 and ADR-023 in 00_ADR_Log.js; before that 2026-11-01: audit
+and persistence checkpoint, no code
 changed — see its entry in the checkpoint log, ADR-019 to ADR-024 in
 00_ADR_Log.js, WHAT IS STILL OPEN item 16 and Execution_OS_Checkpoint_
 Handoff_2026-11-01.md; before that 2026-10-31: GAS-native verification
@@ -21,14 +26,16 @@ same day — see Execution_OS_Governance_Reconciliation_2026-09-12.md for
 the full audit that update was based on) except where marked "updated
 2026-10-24" / "updated 2026-10-26" / "updated 2026-10-27" / "added
 2026-10-27" / "updated 2026-10-31" / "added 2026-10-31" / "updated
-2026-11-01" / "added 2026-11-01". The
+2026-11-01" / "added 2026-11-01" / "updated 2026-11-03" / "added
+2026-11-03". The
 IMPLEMENTATION CHECKPOINT LOG below was kept current through 2026-10-06
 (14_Versioning.js) when the 2026-10-24 repair was made, while this
 header was not — which that repair corrected; the 2026-10-26 entry
 (15_TruthEngine.js), the 2026-10-27 entry (deployment configuration) and
 the 2026-10-31 entry (GAS-native gate) were each added together with the
 header update, so the two agree again, as does the 2026-11-01 entry
-(audit and persistence, no code).
+(audit and persistence, no code) and the 2026-11-03 entry (TruthEngine
+fix after the first real-GAS run).
 
 GOVERNANCE STATUS: Governance Reconciliation Closed / Governance
 Ready. This is NOT the same as ready for implementation — per
@@ -67,6 +74,9 @@ Script, never in real GAS (see the REAL_GAS_REQUIRED lists in
 11_Schema_Test.js and 15_TruthEngine_Test.js and Execution_OS_
 Checkpoint_Handoff_2026-10-08.md section 3). 15_TruthEngine.js is the
 first and only file that writes to a Sheet, and nothing calls it yet.
+[Updated 2026-11-03: the test count for 15_TruthEngine.js and "never in
+real GAS" above are superseded for part of the code — see the [Added
+2026-11-03] paragraph below.]
 Not started: 16_EventLog.js, 17_ReferenceBase.js, 19_Utils.js,
 20_Router.js / 21_Parser.js, and every Slice 1-5 Engine. Nothing has
 run against a real Spreadsheet, and no Telegram command or AI call
@@ -89,7 +99,9 @@ above. Its own Node suite, 90_UnitTests_Test.js, has 65 checks, all
 passing; with the other seven suites that is 219 sandbox tests. The
 gate has NOT been run in Apps Script: until the owner runs it and the
 log is reviewed it has produced no real-GAS evidence of anything, and
-the sentence above still holds.
+the sentence above still holds. [Updated 2026-11-03: the owner ran it
+once, 2026-11-03, and the log was reviewed; "65 checks, all passing" no
+longer holds either. See the [Added 2026-11-03] paragraph below.]
 [Added 2026-11-01] Audit result, no code changed: before any edit, the
 working directory was content-diffed against the accepted 2026-10-31
 delivery and matched byte for byte (29 files). No implementation is in
@@ -99,6 +111,35 @@ files and added one handoff document. The counts above were re-run and
 are unchanged: seven runtime files, 154 sandbox tests, 219 with the
 gate's own suite, every .js passing node --check. All of it is still
 sandbox: nothing has run in real Apps Script.
+[Added 2026-11-03] First real-GAS evidence, and a fix. On 2026-11-03
+06:59 (Asia/Kuala_Lumpur) the owner ran the gate, runTruthEngineGate(),
+once in real Apps Script against Execution's own Spreadsheet, after
+pasting the eight scripts and the manifest into the editor by hand (not
+with clasp), and sent back the whole Execution log as a PDF. Result:
+PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4. The two FAILs were
+defects in 15_TruthEngine.js: a string starting with "=" is read as a
+formula even in a plain-text cell and a leading apostrophe is consumed
+(PT.A), and a 50001-character string made the platform refuse the write
+after part of the row had landed (OS). The owner then authorized the fix
+(2026-11-03, "请做代码，也顺便更新治理文件"). 15_TruthEngine.js now
+carries P10 (a string over 50000 characters is refused before the lock,
+nothing written) and P11 (a string starting with "=" or an apostrophe is
+written with one apostrophe in front). Both are PROPOSED (ADR-022) and
+have been run only in the Node sandbox; P11 rests on a hypothesis no one
+has observed, that the platform then keeps the text as typed, and the
+next run of the gate (group PT.A) is its test. Counts: 15_TruthEngine_
+Test.js has 67 checks (it had 54), so the seven runtime suites total 167,
+all passing, and with the gate's suite 232 are defined. The gate's own
+suite, 90_UnitTests_Test.js, has 26 failing checks against the new
+engine, because its fake platform and six of its checks assume the
+pre-fix engine and the pre-observation platform; it was outside this
+authorization and is unchanged (item 18). The gate itself, 90_UnitTests.js,
+is unchanged. The run is also the first time any file here ran in real
+GAS: besides 15_TruthEngine.js, 60_Observability.js and 10_Config.js ran
+there, on the paths TruthEngine uses; 11_Schema.js, 12_Identity.js,
+13_EventDefinitions.js and 14_Versioning.js were loaded without error but
+none of their functions was called. Still unobserved: the lock's mutual
+exclusion between two executions and flush-before-release.
 
 DEFINITION-OF-READY / DONE / PRODUCTION-READY STATUS (per UEF S0.5):
   [NOT RE-DETERMINED as of 2026-10-24. The three verdicts below are
@@ -159,7 +200,8 @@ builder's choices, not confirmed by the owner. Do not read them as
 decisions, and do not build on one as if it were settled:
   - ADR-021 deployment packaging and the file-naming rules it implies
     (item 14)
-  - ADR-022 the TruthEngine write path, choices P1-P9 (item 11)
+  - ADR-022 the TruthEngine write path, choices P1-P11 (item 11; P10
+    and P11 added 2026-11-03)
   - ADR-023 real-GAS verification by the hand-run gate function in
     90_UnitTests.js (item 15)
   - ADR-024 verification and reporting discipline (item 9 may take it
@@ -237,7 +279,10 @@ WHAT IS STILL OPEN:
      made to work in real GAS — an input to this call, recorded in the
      Constitution's PLATFORM CONSTRAINTS; not itself a verdict.
      2026-10-31: 90_UnitTests.js is the first file built to produce that
-     kind of evidence, for 15_TruthEngine.js only; it has not been run.)
+     kind of evidence, for 15_TruthEngine.js only; it has not been run.
+     2026-11-03: it was run once and gave this project's first real-GAS
+     evidence, for one file — see the 2026-11-03 checkpoint-log entry.
+     The verdicts above are still not re-determined.)
  10. (added 2026-10-25) The read mechanism for Domain data is not
      settled between the two projects' own wording. Execution's
      ADR-003/ADR-012 plan Spreadsheet-level reads (the Domain-shared
@@ -276,6 +321,19 @@ WHAT IS STILL OPEN:
      observations for P6 and P7 and a timing for P3's wait; until it is
      run they stay assumptions. It reports what happened and decides
      nothing.)
+     (2026-11-03: that run happened; see the 2026-11-03 entry and
+     ADR-022. P3: one append took 554-929 ms with no contention, so
+     10000 ms is about ten queued appends of that length; behavior under
+     contention is unobserved. P6: kept 33 of 36 probe strings, but NOT a
+     leading "=" (read as a formula even in a plain-text cell) or a
+     leading apostrophe (consumed) — a defect, now answered by P11,
+     which is PROPOSED and untested in real GAS. P7: the platform grows
+     the grid by itself, so the guard is not needed there; it still works
+     and costs nothing. P10 (new): a string over 50000 characters is
+     refused before the lock; the platform's own refusal had left a
+     partial row. For the owner: P11 against the alternative of refusing
+     such strings, and whether the P7 guard stays. P1-P9 and P10-P11 all
+     remain PROPOSED until the owner confirms them.)
  12. (added 2026-10-26) UCR6's primary text (UEF v1.12) is not in this
      repository. 15_TruthEngine.js was checked only against
      00_File_Map.js's one-sentence paraphrase of it; what "validated"
@@ -317,6 +375,18 @@ WHAT IS STILL OPEN:
         EXEC_OS_SPREADSHEET_ID names Execution's OWN Spreadsheet, run
         runTruthEngineGate() once from the editor, and bring back the
         whole Execution log. Nothing about it has been run so far.
+        [Updated 2026-11-03: done once, by hand-pasting instead of
+        clasp; see g.]
+     g. (added 2026-11-03) The owner ran the gate by pasting the eight
+        scripts and appsscript.json into the Apps Script editor by hand,
+        not with clasp, so a., b. and e. were not exercised and stay open.
+        The first paste included the Node-only *_Test.js files, which
+        stopped the project loading ("SyntaxError: Identifier 'Config'
+        has already been declared", in 10_Config_Test.gs) — the failure
+        ADR-021's rule that a *_Test.js is never pushed predicts. Once
+        they and the 00_ files were removed it ran. To run the gate again
+        with the new 15_TruthEngine.js, paste that one file over the old
+        one and run runTruthEngineGate() again.
  15. (added 2026-10-31) 90_UnitTests.js writes to the Spreadsheet
      directly in a few places — it creates and deletes its own temporary
      ZZ_EXEC_GATE_ tabs and their header rows, writes control rows into
@@ -332,6 +402,16 @@ WHAT IS STILL OPEN:
      rename it), and whether the gate should stay in the pushed set or be
      removed from the deployed project once it has been run. NOT decided
      here. ADR-023 (2026-11-01) records the gate's design as PROPOSED.
+     [Updated 2026-11-03: the gate ran once; its first real log is
+     summarized in the 2026-11-03 entry and in ADR-023. Because
+     15_TruthEngine.js now refuses an oversize string before the lock
+     (P10), the gate's OS check no longer exercises the platform's own
+     cell limit or the lock's release after a failure, and its PASS text
+     "so the lock was released" would not be evidence for the lock on
+     that path; LK.releaseFail still covers a failure inside the lock.
+     The gate's Node suite needs an authorized update (item 18). The
+     exception, the file name and whether the file stays in the pushed set
+     are still the owner's call.]
  16. (added 2026-11-01) The tools behind several of this log's sandbox
      numbers are not in the repository. The 8 Node suites (219 checks)
      are, and anyone can re-run them. But the 45-check deployment
@@ -347,7 +427,50 @@ WHAT IS STILL OPEN:
      NOT decided here. A copy was delivered with the 2026-11-01
      checkpoint as a separate archive, outside the repository tree, so
      that nothing is lost in the meantime; it is not part of the
-     repository.
+     repository. [Updated 2026-11-03: the Node suites are now 232 checks
+     (167 + the gate's 65, of which 26 fail, item 18). The TruthEngine
+     planted-defect run grew to 46 mutants (the 28 plus 18 for P10 and
+     P11), all caught; the extended script is delivered with the
+     2026-11-03 checkpoint as a separate file outside the repository tree,
+     like the earlier copy. The gate's 52-mutant run was not repeated: the
+     gate is unchanged, and its suite is the one that is red.]
+ 17. (added 2026-11-03) .claspignore is not in the owner's copy of the
+     repository. The 2026-11-01 handoff's manifest lists it, and the
+     2026-10-27 entry built it, but the working copy the owner supplied on
+     2026-11-03 (a GitHub snapshot) did not contain it. The owner's
+     explanation, in their words: the OS is not deployed yet, so there is
+     none ("这个OS还没部署，所以没有.claspignore"). Under the Checkpoint
+     Integrity Gate (ADR-018) a difference nobody can explain is a STOP;
+     this one was explained by the owner, and the owner chose to run the
+     gate by pasting files by hand (item 14g), so it blocked nothing. It was
+     NOT rebuilt from memory and nothing in this checkpoint created it.
+     Open: whether it is restored before the first real clasp push (ADR-021
+     records its two patterns), and which copy governs if the two differ.
+ 18. (added 2026-11-03) The gate's Node suite, 90_UnitTests_Test.js, is
+     out of step with the engine and with what the first real run showed.
+     Against the new 15_TruthEngine.js, 26 of its 65 checks fail and 39
+     pass; the other seven suites pass. Cause, from a scratch experiment
+     that was NOT applied to the repository: its fake platform keeps a
+     leading "=" and a leading apostrophe as typed in a plain-text cell,
+     which the real platform did not (OBSERVED 2026-11-03). With only that
+     one rule changed, 20 of the 26 turned green. The other six fail for
+     reasons that follow from P10 and P11 and need a rewrite or an engine
+     variant without them: (11) a platform that re-types nothing now shows
+     the engine's apostrophe, so PT.A FAILs instead of INCONCLUSIVE;
+     (12) a platform that ignores the plain-text format loses fewer
+     shapes (16 of 24, not 19); (13) a platform that eats an apostrophe
+     in plain-text cells now fails no shape; (19) and (43i) the oversize
+     cell on platforms that truncate, accept or fail half-way: the engine
+     refuses it first, so OS passes on all of them; (37) the lock-release
+     mutant is no longer caught "early" by the oversize check, which no
+     longer takes the lock. Also stale there: its model re-types 26 of 36
+     probe shapes where the real control re-typed 23, and check (2) pins
+     26. None of this is a defect in the gate (90_UnitTests.js, unchanged);
+     it is stale test scaffolding. It was not fixed because
+     90_UnitTests_Test.js was outside the 2026-11-03 authorization
+     (ADR-020); it needs its own go-ahead. Until then the repository holds
+     a known-red suite, and any "all suites pass" statement about it must
+     say so.
 
 IMPLEMENTATION CHECKPOINT LOG (per UEF v1.12 S0.6 item 4, adopted
 2026-09-12 — Decision 3 of the Post-Reconciliation brief). Scaffolded
@@ -1046,6 +1169,115 @@ project cannot create that file itself).
       16_EventLog.js and every other new file not started; no EventLog/
       ReferenceBase/Router/Parser/PlanningEngine/AI/Telegram work;
       Personal Life OS only read.
+    2026-11-03 — TruthEngine fix after the gate's first real run
+      (15_TruthEngine.js and its test changed; four governance files
+      synced; no other runtime, test or deployment file changed).
+      Authorized by the owner's 2026-11-03 request "请做代码，也顺便
+      更新治理文件", given in answer to the builder's proposal of that
+      day: one checkpoint that touches only 15_TruthEngine.js, its Node
+      test and the governance files, the gate unchanged, then a STOP.
+      Checkpoint Integrity Gate (ADR-018), before any edit: the working
+      copy was the owner's GitHub snapshot (zip supplied 2026-11-02).
+      Against the 29-line sha256 manifest in the 2026-11-01 handoff, 28
+      files matched and .claspignore is absent (new item 17). Three files
+      are not in the manifest and were not touched: the 2026-11-01 handoff
+      itself, a second copy of the 2026-10-08 handoff (byte-identical to
+      the first), and 60_Execution-main-updated.zip. A difference nobody
+      can explain is a STOP under ADR-018; the owner explained this one and
+      chose to go on (item 17).
+      Evidence: the owner's copy of the Execution log from the gate's first
+      real run (2026-11-03 06:59), as a PDF. The owner sent the same file
+      again on 2026-11-04 (identical sha256); that is not a second run. What
+      it showed is recorded in ADR-022, ADR-023 and the [Added 2026-11-03]
+      paragraph in this file's header.
+      Findings, kept apart (ADR-024). Production defects, both in
+      15_TruthEngine.js: (1) a string starting with "=" or an apostrophe
+      was not kept as typed even in a plain-text cell (a formula was
+      evaluated, an apostrophe consumed); (2) there was no length check, so
+      a 50001-character string was refused by the platform after part of
+      the row had landed. Harness bugs: none in the gate, which behaved as
+      designed. Stale test scaffolding: the fake platform in
+      15_TruthEngine_Test.js treated '@' as total protection, so its old
+      check 44 passed because of the model and said nothing about the real
+      platform, and the fake in 90_UnitTests_Test.js has the same flaw
+      (item 18). My own mistakes:
+      (a) before the run I expected any INCONCLUSIVE to come from an API
+      name the gate had not checked against the official pages; every such
+      name worked, and the INCONCLUSIVE results came from lock behavior;
+      (b) in the proposal I wrote that the gate did not need to change,
+      which is true of the gate, but I had not checked that its Node suite
+      encodes the same old assumptions; running all suites after the engine
+      edit showed 26 failures (item 18).
+      What changed. 15_TruthEngine.js: constants MAX_CELL_CHARS and
+      TEXT_MARKER, a private _needsTextMarker_(), the string branch of
+      _toCell_, the error text in _prepare_ (each kind of problem now gets
+      only the advice that fits it), the header (a Changed note, an OBSERVED
+      block, notes on P3, P6 and P7, new P10 and P11, the write sequence,
+      DOES NOT OWN) and the append JSDoc. The lines that
+      90_UnitTests_Test.js and the scratch mutation scripts replace by exact
+      text were kept as they were. 15_TruthEngine_Test.js: the fake now
+      behaves as observed (a leading "=" is still a formula and a leading
+      apostrophe is still consumed in a '@' cell; a cell over 50000
+      characters throws after the cells before it were written; every
+      setValues() argument is recorded), check 44 reworded, control 45b and
+      checks 55 to 66 added, the header assumptions and the REAL_GAS_REQUIRED
+      list rewritten; 54 checks became 67. Governance: this file (header,
+      CODE STATE, items 9, 11, 14, 15 and 16, new items 17 and 18, this
+      entry, NEXT ACTION), 00_ADR_Log.js (notes in ADR-022 and ADR-023, two
+      PENDING DECISIONS), 00_File_Map.js and 00_Project_Constitution.js
+      (counts and status sentences). 00_Business_Rules.js unchanged: no
+      rule's status changed. No ADR was added and none changed Status.
+      Verification, sandbox only. The seven runtime suites pass, 167/167
+      (10+14+18+17+17+24+67 — 10_Config 14, 11_Schema 18, 12_Identity 17,
+      13_EventDefinitions 17, 14_Versioning 24, 60_Observability 10,
+      15_TruthEngine 67). The gate's suite does not: 39 of 65 pass and 26
+      fail (item 18); that is a known-red suite, not hidden. Planted
+      defects in 15_TruthEngine.js: the 28 of the earlier checkpoints still
+      all caught, plus 18 new ones (no length check; limit one too low and
+      one too high; the apostrophe not counted in the length; the length
+      checked only after the lock; the two kinds of advice swapped or
+      dropped; the message quoting the text; no prefix; prefix only for "="
+      and only for an apostrophe; prefix for every string and for "+", "-"
+      and "@"; a double apostrophe; the empty string prefixed; a prefixed
+      cell with no plain-text format; the caller's record modified; the
+      decision made by field name): 46 mutants, 46 caught, 0 survived. The
+      mutation script's reader of failing check numbers was extended to
+      read labels such as 45b. The shared-scope audit of the seven runtime
+      files and the integration smoke test were re-run and pass. The
+      45-check deployment harness was NOT re-run: it needs a .claspignore,
+      which the working copy lacks (item 17), and two npm modules at
+      hard-coded paths. No file that decides what is pushed was changed.
+      Not verified, by anything here: that P11's apostrophe keeps "="-led
+      and apostrophe-led text as typed on the real platform (a hypothesis;
+      the gate's PT.A is the test); that exactly 50000 characters is
+      accepted and which unit the platform counts in; strings starting with
+      "+", "-" or "@" followed by an expression; and everything that was
+      already REAL_GAS_REQUIRED — the lock's mutual exclusion between two
+      executions, flush-before-release, getLastRow() on long-lived tabs,
+      latency under contention.
+      Honesty notes. (1) Every new check passes because the fake behaves as
+      the 2026-11-03 observation says; where the fake guesses (the apostrophe
+      leaving the rest as text, which cells land before an oversize one) the
+      test header says so as assumptions d and e. (2) The sandbox could not
+      have found defect 1 or 2; only the real run did. That is the reason
+      the gate exists. (3) The scratch experiment behind item 18 changed one
+      rule in a throw-away copy of 90_UnitTests_Test.js; nothing of it was
+      applied to the repository.
+      REAL_GAS_REQUIRED / owner-side: paste the new 15_TruthEngine.js into
+      the Apps Script project over the old one, run runTruthEngineGate()
+      again and bring back the whole log. If the P11 hypothesis holds, PT.A
+      and OS turn PASS; if PT.A still fails, the fallback is to refuse such
+      strings, which is the owner's call (item 11). Nothing else changes in
+      what the owner has to do (items 14 to 17).
+      Scope respected: only 15_TruthEngine.js, 15_TruthEngine_Test.js,
+      00_Project_State.js, 00_ADR_Log.js, 00_File_Map.js and
+      00_Project_Constitution.js were edited; 90_UnitTests.js, 90_UnitTests_
+      Test.js, every other runtime and test file, 00_Business_Rules.js,
+      appsscript.json and every Markdown document are byte-identical to the
+      2026-11-01 state; no .claspignore or .clasp.json created; nothing
+      pushed to or run in Apps Script by this checkpoint; 16_EventLog.js and
+      every other new file not started; Personal Life OS not touched. The
+      checkpoint ends here: a STOP.
   Engine checkpoints: (none yet — Observability/Config/Schema/
     Identity/EventDefinitions/Versioning/TruthEngine are all
     standalone Foundation files, not yet grouped into a Slice 0 Engine
@@ -1208,8 +1440,9 @@ file changed)
   the tree used. Same limit as ever: sandbox only, nothing verified in
   real GAS and nothing verified against a live Spreadsheet.
 
-NEXT ACTION (updated 2026-11-01 by its last paragraph, 2026-10-31 by the
-one before it and 2026-10-27 by the one before that; the rest is the
+NEXT ACTION (updated 2026-11-03 by its last paragraph, 2026-11-01 by the
+one before it, 2026-10-31 by the one before that and 2026-10-27 by the
+one before that; the rest is the
 2026-10-26 text, which superseded the 2026-10-24 text that counted six
 files done): Slice 0 — Foundation is in progress under a
 strict one-file-per-authorization checkpoint discipline, guarded by the
@@ -1265,4 +1498,22 @@ items 9 to 16; (c) an explicit go-ahead for 16_EventLog.js, whose open
 questions are items 11-13. A bare "继续" resumes work that was already
 authorized; it does not authorize a new file (ADR-020; the builder's
 reading, PROPOSED).
+Updated 2026-11-03: the project is at a STOP again. The owner ran the
+gate once (2026-11-03); it found two defects in 15_TruthEngine.js; the
+owner authorized the fix and the 2026-11-03 checkpoint made it (P10 and
+P11, both PROPOSED; see its entry). Nothing is half-written. A new
+window starts from this state: the seven runtime suites pass (167/167);
+the gate's own suite has 26 failing checks (item 18, known and not
+hidden); 15_TruthEngine.js has been run in real GAS only in its pre-fix
+form. What comes next is the owner's call, and none of it is started:
+(a) paste the new 15_TruthEngine.js into the Apps Script project over the
+old one, run runTruthEngineGate() again and bring back the whole log —
+PT.A and OS are expected to turn PASS, and PT.A is the test of P11; (b) a
+go-ahead to update 90_UnitTests_Test.js (item 18), and, if PT.A still
+fails, the choice between protecting such strings another way and
+refusing them (item 11); (c) the owner's answers on the PROPOSED ADRs and
+on items 9 to 18; (d) an explicit go-ahead for 16_EventLog.js, whose open
+questions are items 11-13. A bare "继续" resumes work that was already
+authorized and does not authorize a new file, the update in (b) included
+(ADR-020; the builder's reading, PROPOSED).
 */

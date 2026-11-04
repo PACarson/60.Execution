@@ -14,6 +14,14 @@ Code status (updated 2026-10-31): Slice 0 — Foundation in progress.
   when written 2026-07-25/26, stale since the first checkpoint
   2026-09-12/14; it read "Six ... (100/100)" until 15_TruthEngine.js,
   2026-10-26; the gate was added 2026-10-31.)
+  Updated 2026-11-03: the numbers and the "none verified in real GAS"
+  above are superseded. The gate ran once in real Apps Script on
+  2026-11-03 and found two defects in 15_TruthEngine.js, which was then
+  changed (P10, P11; PROPOSED, ADR-022). The seven runtime suites are now
+  167/167 (15_TruthEngine.js: 67); the gate's own suite has 26 failing
+  checks against the changed engine because its fake platform is out of
+  date (00_Project_State.js item 18). The new code has been run only in
+  the Node sandbox. 00_Project_State.js is the authoritative record.
 Governance updated 2026-11-01 (no code changed): a WORKING RULES block
   (ADR-019, ADR-020, both Accepted) and a PROPOSED PRACTICES block
   (ADR-021 to ADR-024, not ratified by the owner) were added below. The
@@ -165,7 +173,11 @@ State.js — not decided here. It does not say that any Execution OS file
 has been run in GAS: no record of that exists. (Added 2026-10-31: the
 tool for making that record for 15_TruthEngine.js now exists —
 runTruthEngineGate() in 90_UnitTests.js, run by hand in the Apps Script
-editor — but it has not been run, so the sentence above still holds.)
+editor — but it has not been run, so the sentence above still holds.
+Updated 2026-11-03: it was run once, on 2026-11-03, and so a record now
+exists that 15_TruthEngine.js, and the files it calls, ran in real GAS
+(00_Project_State.js, 2026-11-03 entry). The sentence above is about
+every Execution OS file; it is no longer true of that one.)
 
 CHECKPOINT INTEGRITY GATE (ADR-018, added here 2026-10-08)
 ---------------------------------------------------------------------
@@ -211,10 +223,11 @@ State.js (WHAT IS STILL OPEN):
     naming rules they imply (a name ending in _Test.js is Node-only and
     never pushed; a name starting with 00_ is comment-only and never
     pushed). Item 14.
-  - ADR-022 the TruthEngine write path, choices P1 to P9 in
-    15_TruthEngine.js's header. Item 11.
+  - ADR-022 the TruthEngine write path, choices P1 to P11 in
+    15_TruthEngine.js's header (P10 and P11 added 2026-11-03). Item 11.
   - ADR-023 real-GAS verification by the hand-run gate function in
-    90_UnitTests.js. The gate has not been run. Item 15.
+    90_UnitTests.js. The gate was run once, 2026-11-03 (it had not been
+    run when this was written, 2026-11-01). Item 15.
   - ADR-024 verification and reporting discipline: a sandbox result is
     never reported as a real-GAS result; evidence is labelled by tier;
     test code that guards a write path is checked by planting defects;

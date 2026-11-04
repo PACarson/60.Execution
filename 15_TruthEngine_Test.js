@@ -7,19 +7,38 @@ platform calls, lock hygiene, UCR3 routing -- against a hand-built FAKE
 platform. It does NOT and CANNOT verify real Google Sheets or
 LockService behavior.
 
-Three behaviors of the fake are ASSUMPTIONS, not facts about real
-Sheets, and every check that leans on one says so:
+Behaviors of the fake that are ASSUMPTIONS, not facts about real
+Sheets; every check that leans on one says so. Since 2026-11-03 some
+can be compared with the project's first real Apps Script run (the gate,
+90_UnitTests.js, in Execution's own Spreadsheet, locale en_US); the
+notes say which:
   (a) COERCION MODEL: a string written to a cell that is not formatted
       '@' is "re-typed" when it looks like a number, a date or a
-      formula. This models what Personal Life OS's Known Limitation 11
-      observed (LIVE GAS, date/time-shaped strings, in that project's own
-      Spreadsheet). The number-shaped and formula-shaped parts are this
-      file's extrapolation, not observed anywhere.
-  (b) GRID BOUND: a setValues() past getMaxRows() throws. Pessimistic,
-      unverified; it makes the grid-growth guard testable.
+      formula, and a leading apostrophe is consumed. OBSERVED in real
+      GAS (23 of 36 probe shapes were re-typed without '@'); this fake
+      re-types only a subset of those shapes. In a '@' cell the real
+      platform STILL read a leading "=" as a formula and STILL consumed
+      a leading apostrophe (OBSERVED, same run); this fake does the
+      same. Before 2026-11-03 it treated '@' as total protection, which
+      made the old form of check (44) pass whatever the real platform did.
+  (b) GRID BOUND: a setValues() past getMaxRows() throws. NOT what the
+      real platform does (OBSERVED: it grows the grid itself). Kept
+      pessimistic on purpose, so the grid-growth guard stays testable.
   (c) LOCK: a second waitLock() while the lock is held throws (as a
       timeout would). Models mutual exclusion; real LockService
-      behavior is REAL_GAS_REQUIRED.
+      behavior is REAL_GAS_REQUIRED. (OBSERVED: within ONE execution a
+      second lock object is granted, which this fake does not do.)
+  (d) THE P11 HYPOTHESIS, not observed anywhere: when the first
+      apostrophe is consumed, what is left is kept as TEXT and not
+      parsed again ("'=1+1" is stored as the text "=1+1"). Checks (61),
+      (62) and (45b) lean on it for their read-back half; the half that
+      asserts what the engine SENDS does not. The next real gate run
+      (PT.A) is the test of (d).
+  (e) CELL LIMIT: setValues() with a string of more than 50000
+      characters throws the platform's message after the cells before
+      it in the row have been written. The limit, the message and the
+      leftover row are OBSERVED; which cells landed is not, so "the
+      cells before it" is a guess.
 Every REAL_GAS_REQUIRED item is listed at the bottom of this file's
 output, not folded into the pass/fail count above it.
 
@@ -46,10 +65,23 @@ function isBlank(v) {
   return v === '' || v === null || v === undefined;
 }
 
-// ASSUMPTION (a): see the header. A string in a non-'@' cell is
-// re-typed according to its shape. Anything else is stored as given.
+// ASSUMPTIONS (a) and (d): see the header. Whatever the format, a first
+// apostrophe is consumed and a first "=" makes a formula (both OBSERVED,
+// also in '@' cells). In a non-'@' cell a string is also re-typed
+// according to its shape. Anything else is stored as given.
+const MAX_CELL_CHARS_FAKE = 50000; // ASSUMPTION (e) (the figure is OBSERVED)
+
 function coerce(value, format) {
-  if (typeof value !== 'string' || value === '' || format === '@') {
+  if (typeof value !== 'string' || value === '') {
+    return value;
+  }
+  if (value.charAt(0) === '\'') {
+    return value.slice(1); // (d): what is left stays text, never parsed again
+  }
+  if (value.charAt(0) === '=') {
+    return { coercedTo: 'formula', from: value };
+  }
+  if (format === '@') {
     return value;
   }
   if (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(value)) {
@@ -58,9 +90,6 @@ function coerce(value, format) {
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
     return { coercedTo: 'date', from: value };
   }
-  if (value.charAt(0) === '=') {
-    return { coercedTo: 'formula', from: value };
-  }
   return value;
 }
 
@@ -68,6 +97,7 @@ function makeFakeSheet(initialRows, opts) {
   opts = opts || {};
   const rows = (initialRows || []).map(function(r) { return r.slice(); });
   const formats = {}; // "row,col" (1-based) -> format string
+  const rawWrites = []; // what each setValues() was handed, before the platform touched it
   let maxRows = opts.maxRows || 1000;
 
   function ensureRow(i) {
@@ -77,6 +107,7 @@ function makeFakeSheet(initialRows, opts) {
   return {
     _rows: rows,
     _formats: formats,
+    _rawWrites: rawWrites,
     getLastColumn: function() {
       let last = 0;
       rows.forEach(function(r) {
@@ -127,6 +158,10 @@ function makeFakeSheet(initialRows, opts) {
         },
         setValues: function(values) {
           ops.push('setValues:' + r + ',' + c + ',' + nr + ',' + nc);
+          rawWrites.push({
+            row: r, column: c,
+            values: values.map(function(line) { return line.slice(); })
+          });
           if (hooks.setValuesThrows) { throw new Error(hooks.setValuesThrows); }
           // ASSUMPTION (b): a write past the grid throws.
           if (r - 1 + nr > maxRows) {
@@ -140,6 +175,10 @@ function makeFakeSheet(initialRows, opts) {
           for (let i = 0; i < nr; i++) {
             ensureRow(r - 1 + i);
             for (let j = 0; j < nc; j++) {
+              // ASSUMPTION (e): the cells before this one stay written.
+              if (typeof values[i][j] === 'string' && values[i][j].length > MAX_CELL_CHARS_FAKE) {
+                throw new Error('Your input contains more than the maximum of 50000 characters in a single cell.');
+              }
               while (rows[r - 1 + i].length < c - 1 + j) { rows[r - 1 + i].push(''); }
               rows[r - 1 + i][c - 1 + j] = coerce(values[i][j], formats[(r + i) + ',' + (c + j)]);
             }
@@ -736,10 +775,11 @@ check('(43) Plain text: date-shaped strings (plain date, ISO timestamp) are stor
   assert.deepStrictEqual(plain(row), values);
 });
 
-check('(44) Plain text: a string starting with "=" is stored as text, not as a formula', function() {
+check('(44) Plain text: a string starting with "=" is stored as text, not as a formula (this needs the P11 apostrophe -- check 61 shows what is sent, check 45b why \'@\' alone is not enough; the read-back leans on assumption d)', function() {
   const values = ['=1+1', '=IMPORTXML("https://example.invalid","//a")'];
   const row = appendShapes(values);
   assert.deepStrictEqual(plain(row), values);
+  row.forEach(function(cell) { assert.strictEqual(typeof cell, 'string', 'a cell was re-typed: ' + JSON.stringify(cell)); });
 });
 
 check('(45) Control (proves checks 42-44 are not vacuous): in the fake, WITHOUT the plain-text format, the same shapes ARE re-typed', function() {
@@ -749,6 +789,20 @@ check('(45) Control (proves checks 42-44 are not vacuous): in the fake, WITHOUT 
   assert.strictEqual(typeof sheet._rows[1][0], 'number');
   assert.strictEqual(sheet._rows[1][1].coercedTo, 'date');
   assert.strictEqual(sheet._rows[1][2].coercedTo, 'formula');
+});
+
+check('(45b) Control (proves checks 44, 61 and 62 are not vacuous): in the fake, WITH the \'@\' format, a "="-led string is STILL a formula and an apostrophe-led one STILL loses its apostrophe -- what the engine did before P11, and what the real gate saw on 2026-11-03', function() {
+  const sheet = makeFakeSheet([['a', 'b', 'c', 'd']]);
+  reset({ T: sheet });
+  sheet.getRange(2, 1, 1, 4).setNumberFormat('@');
+  sheet.getRange(2, 1, 1, 4).setValues([['=1+1', '\'quoted', 'plain', '00123']]);
+  assert.strictEqual(sheet._rows[1][0].coercedTo, 'formula');
+  assert.strictEqual(sheet._rows[1][1], 'quoted');
+  assert.strictEqual(sheet._rows[1][2], 'plain');
+  assert.strictEqual(sheet._rows[1][3], '00123', 'the \'@\' format must still protect shapes that need only it');
+  // Without the format an apostrophe is consumed too (OBSERVED in the real control).
+  sheet.getRange(3, 1, 1, 1).setValues([['\'quoted']]);
+  assert.strictEqual(sheet._rows[2][0], 'quoted');
 });
 
 check('(46) Plain text: \'@\' is applied to each non-empty string cell BEFORE the row\'s setValues -- and only to those', function() {
@@ -843,24 +897,185 @@ check('(54) UCR3 / log hygiene: a failure logs the tab name and field NAMES, nev
   assert.ok(log.indexOf('"T"') !== -1 || log.indexOf('tabName') !== -1, 'tab name should be logged');
 });
 
+// ================= J. Per-cell length (PROPOSED P10, limit OBSERVED) =====
+
+function messageOf(record, tabName) {
+  try {
+    TruthEngine.append(tabName || 'T', record);
+  } catch (e) {
+    return e.message;
+  }
+  return null;
+}
+
+function noSheetTouched() {
+  ['getScriptLock', 'waitLock', 'openById', 'getSheetByName', 'setNumberFormat', 'setValues', 'flush', 'releaseLock']
+      .forEach(function(name) { assert.strictEqual(count(name), 0, name + ' was called for a refused record'); });
+}
+
+check('(55) Length (P10): exactly 50000 characters is accepted and written whole; 50001 is refused by field name and length -- before the lock, with no Sheet call and nothing written', function() {
+  let sheet = makeFakeSheet([['m', 'big']]);
+  reset({ T: sheet });
+  assert.strictEqual(TruthEngine.append('T', { m: 'ok', big: 'x'.repeat(50000) }).rowNumber, 2);
+  assert.strictEqual(sheet._rows[1][1].length, 50000);
+
+  sheet = makeFakeSheet([['m', 'big']]);
+  reset({ T: sheet });
+  const before = JSON.stringify(sheet._rows);
+  const message = messageOf({ m: 'ok', big: 'x'.repeat(50001) });
+  assert.ok(/unsupported value\(s\) -- "big": a string of 50001 characters when written \(one cell holds at most 50000\)/.test(message), message);
+  assert.strictEqual(JSON.stringify(sheet._rows), before);
+  noSheetTouched();
+});
+
+check('(56) Length (P10): the P11 apostrophe counts toward the limit -- a "="-led or apostrophe-led string of 50000 characters (50001 written) is refused and says 50001; one of 49999 (50000 written) is accepted', function() {
+  ['=', '\''].forEach(function(lead) {
+    let sheet = makeFakeSheet([['big']]);
+    reset({ T: sheet });
+    assert.strictEqual(TruthEngine.append('T', { big: lead + 'x'.repeat(49998) }).rowNumber, 2, 'lead ' + lead);
+    assert.strictEqual(sheet._rawWrites[0].values[0][0].length, 50000, 'lead ' + lead);
+
+    sheet = makeFakeSheet([['big']]);
+    reset({ T: sheet });
+    const message = messageOf({ big: lead + 'x'.repeat(49999) });
+    assert.ok(/"big": a string of 50001 characters when written/.test(message), 'lead ' + lead + ': ' + message);
+    noSheetTouched();
+    assert.strictEqual(sheet._rawWrites.length, 0);
+  });
+});
+
+check('(57) Length (P10): every too-long field is named in one message, and a fine field beside them is not written either', function() {
+  const sheet = makeFakeSheet([['a', 'b', 'c']]);
+  reset({ T: sheet });
+  const message = messageOf({ a: 'x'.repeat(50001), b: 'y'.repeat(60000), c: 'fine' });
+  assert.ok(/"a": a string of 50001 characters/.test(message) && /"b": a string of 60000 characters/.test(message), message);
+  assert.ok(!/"c":/.test(message), message);
+  assert.deepStrictEqual(rowsOf(sheet), [['a', 'b', 'c']]);
+  noSheetTouched();
+});
+
+check('(58) Messages: each kind of problem gets only the advice that fits it -- type advice for a wrong type, length advice for a long string, both when both occur', function() {
+  const sheet = makeFakeSheet([['a', 'b']]);
+  reset({ T: sheet });
+  const TYPE_ADVICE = /Only string, finite number, boolean, null and undefined are accepted/;
+  const LENGTH_ADVICE = /Shorten the value, or keep the text elsewhere/;
+  const typeOnly = messageOf({ a: {}, b: 'fine' });
+  assert.ok(TYPE_ADVICE.test(typeOnly) && !LENGTH_ADVICE.test(typeOnly), typeOnly);
+  const lengthOnly = messageOf({ a: 'x'.repeat(50001), b: 'fine' });
+  assert.ok(LENGTH_ADVICE.test(lengthOnly) && !TYPE_ADVICE.test(lengthOnly), lengthOnly);
+  const both = messageOf({ a: {}, b: 'x'.repeat(50001) });
+  assert.ok(TYPE_ADVICE.test(both) && LENGTH_ADVICE.test(both), both);
+});
+
+check('(59) Length (P10) / log hygiene: the log carries the field name and the length, never any of the text, and stays short', function() {
+  const sheet = makeFakeSheet([['known', 'big']]);
+  reset({ T: sheet });
+  const text = 'SECRET-LONG-TEXT-' + 'x'.repeat(50001);
+  assert.throws(function() { TruthEngine.append('T', { known: 'ok', big: text }); });
+  const log = capturedLogLines.join('\n');
+  assert.ok(log.indexOf('SECRET-LONG-TEXT') === -1, 'the text leaked into the log');
+  assert.ok(log.indexOf('big') !== -1 && /5\d{4} characters/.test(log), 'field name and length should be logged: ' + log.slice(0, 300));
+  assert.ok(log.length < 1000, 'the log is ' + log.length + ' characters');
+  assert.strictEqual(capturedLogLines.filter(function(l) { return l.indexOf('[ERROR] TruthEngine.append') !== -1; }).length, 1);
+});
+
+check('(60) Control (proves checks 55-59 are not vacuous): in the fake, a raw setValues() with one 50001-character cell throws the platform\'s error AND leaves the cells before it behind (OBSERVED on the real platform: the error text and a row left behind), which is what P10 prevents', function() {
+  const sheet = makeFakeSheet([['m', 'big', 'z']]);
+  reset({ T: sheet });
+  assert.strictEqual(sheet.getLastRow(), 1);
+  assert.throws(function() { sheet.getRange(2, 1, 1, 3).setValues([['marker', 'x'.repeat(50001), 'after']]); },
+      /more than the maximum of 50000 characters in a single cell/);
+  assert.strictEqual(sheet.getLastRow(), 2, 'no row was left behind');
+  assert.deepStrictEqual(rowsOf(sheet)[1], ['marker']);
+});
+
+// ================= K. Apostrophe prefix (PROPOSED P11) ===================
+
+function appendRecord(values) {
+  const headers = values.map(function(v, i) { return 'c' + i; });
+  const sheet = makeFakeSheet([headers]);
+  reset({ T: sheet });
+  const rec = {};
+  values.forEach(function(v, i) { rec['c' + i] = v; });
+  TruthEngine.append('T', rec);
+  return { sheet: sheet, record: rec };
+}
+
+check('(61) P11: a string that starts with "=" is handed to setValues() with ONE apostrophe in front, in a cell already formatted \'@\'; the caller\'s record is not changed; the fake (assumption d) reads the original back', function() {
+  const values = ['=1+1', '=IMPORTXML("https://example.invalid","//a")', '=', '=='];
+  const made = appendRecord(values);
+  assert.strictEqual(made.sheet._rawWrites.length, 1);
+  assert.deepStrictEqual(plain(made.sheet._rawWrites[0].values), [values.map(function(v) { return '\'' + v; })]);
+  assert.deepStrictEqual(plain(made.sheet._formats), { '2,1': '@', '2,2': '@', '2,3': '@', '2,4': '@' });
+  assert.deepStrictEqual(plain(made.record), { c0: values[0], c1: values[1], c2: values[2], c3: values[3] });
+  assert.deepStrictEqual(plain(made.sheet._rows[1]), values);
+});
+
+check('(62) P11: a string that starts with an apostrophe is handed over with ONE more apostrophe in front (the platform consumes the first); the fake (assumption d) reads the original back', function() {
+  const values = ['\'quoted', '\'', '\'=1+1', '\'\'two'];
+  const made = appendRecord(values);
+  assert.deepStrictEqual(plain(made.sheet._rawWrites[0].values), [values.map(function(v) { return '\'' + v; })]);
+  assert.deepStrictEqual(plain(made.sheet._rows[1]), values);
+});
+
+check('(63) P11: ONLY a first character of "=" or an apostrophe triggers the prefix -- the same characters elsewhere, a leading space, a full-width "=", and other leading symbols are handed over as typed', function() {
+  const values = ['a=b', 'it\'s', 'x\'', ' =1+1', ' \'quoted', '＝1+1', '+3', '-7', '@home', '#tag', '"q"', 'plain', 'line1\nline2'];
+  const made = appendRecord(values);
+  assert.deepStrictEqual(plain(made.sheet._rawWrites[0].values), [values]);
+  assert.deepStrictEqual(plain(made.sheet._rows[1]), values);
+});
+
+check('(64) P11: empty strings, null, undefined, numbers and booleans never get the prefix, and an empty string still gets no format', function() {
+  const sheet = makeFakeSheet([['e', 'n', 'u', 'num', 'bool', 'eq']]);
+  reset({ T: sheet });
+  TruthEngine.append('T', { e: '', n: null, u: undefined, num: 5, bool: false, eq: '=x' });
+  assert.deepStrictEqual(plain(sheet._rawWrites[0].values), [['', '', '', 5, false, '\'=x']]);
+  assert.deepStrictEqual(ops.filter(function(o) { return o.indexOf('setNumberFormat') === 0; }), ['setNumberFormat:2,6:@']);
+});
+
+check('(65) P11: the decision is made by the VALUE alone -- a field or header named like a formula changes nothing, and the same value is treated the same under any name', function() {
+  const sheet = makeFakeSheet([['formula', '=weird', 'plain']]);
+  reset({ T: sheet });
+  TruthEngine.append('T', { formula: 'plain text', '=weird': '=1+1', plain: '=1+1' });
+  assert.deepStrictEqual(plain(sheet._rawWrites[0].values), [['plain text', '\'=1+1', '\'=1+1']]);
+});
+
+check('(66) P11: the prefix changes nothing about the call sequence -- still one setValues per append, one \'@\' per non-empty string cell, all formats before the write, flush before release', function() {
+  const sheet = makeFakeSheet([['a', 'b', 'c']]);
+  reset({ T: sheet });
+  TruthEngine.append('T', { a: '=1+1', b: '\'x', c: 'plain' });
+  assert.strictEqual(count('setValues'), 1);
+  assert.strictEqual(count('setNumberFormat'), 3);
+  const lastFormat = Math.max.apply(null, ops.map(function(o, i) { return o.indexOf('setNumberFormat') === 0 ? i : -1; }));
+  assert.ok(lastFormat < first('setValues'), JSON.stringify(ops));
+  assert.ok(first('flush') > first('setValues') && first('releaseLock') > first('flush'), JSON.stringify(ops));
+});
+
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed (sandbox logic only)');
 console.log('');
-console.log('REAL_GAS_REQUIRED -- not verified by anything above, and cannot be from this environment:');
+console.log('REAL_GAS_REQUIRED -- not verified by anything above, and cannot be from this environment.');
+console.log('Items seen once in real Apps Script on 2026-11-03 (the gate, 90_UnitTests.js, Execution\'s own');
+console.log('Spreadsheet, locale en_US) are marked OBSERVED; what is listed is what is STILL open:');
 console.log('  - LockService.getScriptLock().waitLock(): real mutual exclusion between two overlapping');
-console.log('    executions, and the real timeout behavior/message (checks 34-41 only model it)');
+console.log('    executions, and the real timeout behavior/message (checks 34-41 only model it).');
+console.log('    OBSERVED so far: in ONE execution a second lock object is granted while the first holds');
+console.log('    the lock, so one execution cannot show it');
 console.log('  - that SpreadsheetApp.flush() before releaseLock() really makes the next lock holder\'s');
 console.log('    getLastRow() see the new row (no overwritten row under concurrent triggers)');
-console.log('  - setNumberFormat(\'@\') then setValues() really keeping, in EXECUTION\'S Spreadsheet:');
-console.log('    "00123", "1e5", an all-digit hex hash, "2026-10-25", an ISO timestamp, and a leading "="');
-console.log('    string as text (the sibling project verified date/time-shaped strings only, in its own');
-console.log('    Spreadsheet); and that getValues() reads the same strings back');
-console.log('  - whether setValues() past getMaxRows() throws or grows the grid, and that insertRowsAfter()');
-console.log('    behaves as assumed (checks 49-50 only model the pessimistic case)');
+console.log('  - P11 (checks 61-66): that a leading apostrophe really makes the platform keep a "="-led or');
+console.log('    apostrophe-led string as typed (assumption d). OBSERVED instead: with \'@\' alone it does not.');
+console.log('    The next gate run, group PT.A, is the test; if it fails, the fallback is to refuse such strings');
+console.log('  - strings that start with "+", "-" or "@" and then go on like an expression (the gate probed');
+console.log('    only "+3" and "-7", both kept)');
+console.log('  - OBSERVED, no longer open: \'@\' + one setValues() keeps 33 of 36 probe shapes (every number-,');
+console.log('    date-, time-, hash- and TRUE/false-shaped one); the platform grows the grid by itself (check');
+console.log('    49 models a case it does not have; the guard stays); one append took 554-929 ms, no contention');
+console.log('  - the cell limit (checks 55-60): OBSERVED that 50001 characters is refused after part of the row');
+console.log('    landed; NOT observed: that exactly 50000 is accepted, and the unit the platform counts in');
+console.log('    (P10 counts UTF-16 units)');
 console.log('  - getLastRow() on real tabs (pre-formatted blank rows, stray content far below the data)');
-console.log('  - real per-append latency: one lock hold = (string columns + ~5) Sheet calls, against the');
-console.log('    PROPOSED 10000 ms LOCK_WAIT_MS, under real contention');
-console.log('  - the real cell-size limit and any other platform error on a very large string');
+console.log('  - per-append latency under real contention, against the PROPOSED 10000 ms LOCK_WAIT_MS');
 console.log('');
 console.log('NOT VERIFIABLE FROM THIS REPOSITORY (not a GAS item):');
 console.log('  - UCR6\'s primary text (UEF v1.12) is not available; conformance was checked only against');

@@ -3,7 +3,11 @@
 EXECUTION OS — ADR LOG (project-local, per UEF S0.7)
 =====================================================================
 25 ADRs, ADR-000 through ADR-024 (updated 2026-11-01; it read "19
-ADRs, ADR-000 through ADR-018" until then). ADR-000 through ADR-020
+ADRs, ADR-000 through ADR-018" until then). Updated 2026-11-03: no ADR
+added and no Status changed; ADR-022 and ADR-023 gained dated notes (the
+first real-GAS run of the gate; choices P10 and P11 of the TruthEngine
+write path) and the PENDING DECISIONS list gained two lines. ADR-000
+through ADR-020
 are Status: Accepted except where noted. ADR-021 through ADR-024 are
 Status: PROPOSED: they record engineering choices that are built or in
 use but that the owner has NOT confirmed — they are not approved
@@ -624,11 +628,14 @@ ADR-021 — Deployment packaging for the Apps Script project: the clasp ignore l
   owner's confirmation or change of any rule above; a clasp release
   that reads its ignore file differently.
 
-ADR-022 — TruthEngine write path: one append-only, plain-text-protected, script-locked row write (15_TruthEngine.js, choices P1 to P9)
+ADR-022 — TruthEngine write path: one append-only, plain-text-protected, script-locked row write (15_TruthEngine.js, choices P1 to P11; P10 and P11 added 2026-11-03)
   Status: PROPOSED — built 2026-10-26 under the owner's authorization
   for that one file; the choices are the builder's and are not
-  confirmed; never run in real Apps Script | Date: 2026-10-26; recorded
-  2026-11-01
+  confirmed. [Updated 2026-11-03: it was run in real Apps Script once,
+  through the gate (ADR-023), and the run found two defects; P10 and P11
+  were added at the owner's go-ahead of that day, and the new code has
+  been run only in the Node sandbox.] | Date: 2026-10-26; recorded
+  2026-11-01; updated 2026-11-03
   Context: 00_File_Map.js defines 15_TruthEngine.js only as the "generic
   validated safe append/write owner, per UCR6". UCR6's primary text is
   not in this repository (open item 12), so "validated" and "safe" had
@@ -656,6 +663,13 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   before a write past the last row; P8 no read-back; P9 logs name the
   tab and the field names, never the values. SpreadsheetApp.flush() runs
   before the lock is released (official docs).
+  [Added 2026-11-03] P10 a string longer than 50000 characters, counted
+  as it will be written, is refused in the argument validation, before
+  the lock and before any Sheet call, naming the field and the length and
+  never the text; P11 a string whose first character is "=" or an
+  apostrophe is written with one apostrophe in front, on the expectation
+  that the platform consumes it and keeps the original text. Both are
+  decided by the value alone, never by a field name or column.
   Evidence: CONFIRMED (governance text in this repository: the File_Map
   entry, Architecture S6.1, ADR-012 and BR-10, the Constitution's
   Platform Constraints); OBSERVED (Personal Life OS's source, read
@@ -666,28 +680,73 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   alone (number-, date- and formula-shaped), a write past the grid, the
   lock's mutual exclusion, flush-before-release. 90_UnitTests.js
   (ADR-023) was built to observe several of these; it has not been run.
+  [The paragraph above is the 2026-11-01 text. Updated 2026-11-03: the
+  sandbox is now 67 checks and 46 planted defects (the 28 plus 18 for P10
+  and P11), each caught by at least one check, and the gate HAS been run.]
+  OBSERVED IN REAL APPS SCRIPT (2026-11-03 06:59 Asia/Kuala_Lumpur, the
+  gate of ADR-023 run once from the editor against Execution's own
+  Spreadsheet "60.Execution"; locale en_US, Spreadsheet time zone
+  Asia/Shanghai, script time zone Asia/Singapore; evidence: the owner's
+  copy of that Execution log): (1) without the plain-text format, 23 of
+  36 probe strings were re-typed by the Spreadsheet, so P6's protection is
+  needed; (2) with P6 as built, 33 of the 36 were kept: every number-,
+  date-, time-, hash- and TRUE/false-shaped string; (3) the 3 that were not:
+  a string starting with "=" was read as a formula even in a plain-text
+  cell ("=1+1" came back as the number 2), and a leading apostrophe was
+  consumed ("'quoted" came back as "quoted") — a DEFECT in the file as
+  first built, answered by P11; (4) a 50001-character string made
+  setValues() fail with "Your input contains more than the maximum of
+  50000 characters in a single cell." and the failed call left a row
+  behind (getLastRow() 2 to 3) — a DEFECT in the file as first built (no
+  length check), answered by P10; (5) a raw write one row past the grid
+  was accepted and the grid grew, so the platform copes by itself and the
+  P7 guard, which works, is not needed there; (6) one append took 554 to
+  929 ms with no contention, so P3's 10000 ms covers about ten queued
+  appends of that length; (7) within ONE execution a second script-lock
+  object was granted while the first was held, so the lock's release
+  paths and timeout could not be exercised. NOT observed, still open:
+  that P11's apostrophe really makes the platform keep such text as typed
+  (the next gate run, group PT.A, is the test; if it fails, the fallback
+  is to refuse such strings); that exactly 50000 characters is accepted
+  and which unit the platform counts in; strings starting with "+", "-"
+  or "@" followed by an expression (only "+3" and "-7" were probed); mutual
+  exclusion between two overlapping executions; flush-before-release;
+  getLastRow() on long-lived tabs; latency under contention.
   Impact: every later file that writes a row calls TruthEngine.append; a
   caller that wants a numeric cell must pass a number, because a
   numeric-looking string is stored as text; the caller serializes
   payloads (dates as ISO strings, objects through JSON.stringify).
-  Next Steps: the owner confirms or changes P1 to P9 (00_Project_State.js
-  item 11; most worth a call: P2, P3, P6, P7); someone with UEF v1.12
-  checks UCR6 (item 12); the first real run of the gate.
+  [Added 2026-11-03: a string over 50000 characters is refused, with
+  nothing written, so a caller that may hold longer text must split it or
+  store a reference; and a string that starts with "=" or an apostrophe
+  goes to the platform with one extra apostrophe, which is expected to
+  disappear on read.]
+  Next Steps: the owner confirms or changes P1 to P11 (00_Project_State.js
+  item 11; most worth a call: P2, P3, P6, P7, and now P11 against the
+  alternative of refusing such strings); someone with UEF v1.12
+  checks UCR6 (item 12); [updated 2026-11-03: the first real run of the
+  gate is done; the second, with the new 15_TruthEngine.js pasted in, is
+  the test of P10 and P11 — PT.A and OS are expected to turn PASS].
   Related ADRs: ADR-012 (own Spreadsheet); ADR-023 (the gate that
   observes it); ADR-018; BR-10.
   Review Trigger: a real-GAS observation that contradicts P6 or P7 (a
   formula-shaped string stored as a formula, a write past the grid
   failing or dropping data); UCR6's text disagreeing; the first caller
-  needing update-by-key.
+  needing update-by-key. [Added 2026-11-03: a gate run in which PT.A still
+  fails after P11; a platform failure inside setValues() that leaves part
+  of a row for any other reason; a cell limit or counting unit different
+  from the one P10 assumes.]
 
 ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   Status: PROPOSED — the owner asked for a GAS-native verification file
   in the run...Gate() style on 2026-10-27 ("先做1，然后做2"); that request
   is the basis. Built 2026-10-29 to 2026-10-31. The design below, the
   test-scaffolding exception and the file name are the builder's choices
-  and await confirmation (00_Project_State.js item 15). The gate has NOT
-  been run in Apps Script. | Date: requested 2026-10-27; delivered
-  2026-10-31; recorded 2026-11-01
+  and await confirmation (00_Project_State.js item 15). [The gate had NOT
+  been run in Apps Script when this was recorded, 2026-11-01. Updated
+  2026-11-03: the owner ran it once, 2026-11-03; see Evidence.] | Date:
+  requested 2026-10-27; delivered 2026-10-31; recorded 2026-11-01;
+  updated 2026-11-03
   Context: the owner's practice is that every OS is made to work in real
   GAS ("我所有的os都是在gas跑通的", 2026-10-27; 00_Project_Constitution.js,
   PLATFORM CONSTRAINTS). Every test so far runs in a Node sandbox against
@@ -723,6 +782,36 @@ ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   getDisplayValues, getNumberFormats and insertSheet entries were not
   read on the official pages. A wrong name makes the affected group
   report INCONCLUSIVE, never a TruthEngine verdict.
+  [Updated 2026-11-03, the first real run: 2026-11-03 06:59
+  Asia/Kuala_Lumpur, run once by hand from the Apps Script editor after
+  the owner pasted the eight scripts and the manifest in, not with
+  clasp; evidence is the owner's copy of the Execution log. Result: PASS
+  5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4, 17010 ms; the Spreadsheet
+  was left with the one tab it had before. The two FAILs were defects in
+  15_TruthEngine.js, not in the gate (PT.A: a leading "=" or apostrophe
+  not kept; OS: a row left behind by a refused 50001-character cell); the
+  fix is ADR-022's P10 and P11. The three INCONCLUSIVE/SKIPPED results
+  (LK.release, LK.releaseFail, LK.timeout) are not defects: the platform
+  granted a second script-lock object within one execution, so those
+  checks cannot conclude in a single execution. Every platform call the
+  gate had marked as unread on the official pages (getDisplayValues,
+  getNumberFormats, insertSheet) worked. My earlier expectation that any
+  INCONCLUSIVE would come from a wrong API name was wrong; it came from
+  lock behavior. A first attempt failed to load at all (SyntaxError:
+  Identifier 'Config' has already been declared, in 10_Config_Test.gs)
+  because the Node-only *_Test.js files had been pasted into the project
+  too; ADR-021's rule that they are never pushed predicted exactly that.
+  What the P10 fix changes for the gate: OS now sees the engine refuse
+  the oversize string before it takes the lock, so OS no longer
+  exercises the platform's own limit or the lock's release after a
+  failure (its PASS text, "so the lock was released", is then not
+  evidence for the lock; LK.releaseFail still provokes a failure inside
+  the lock). The gate itself is unchanged. Its Node suite
+  (90_UnitTests_Test.js) is NOT unchanged in effect: 26 of its 65 checks
+  now fail against the new engine because its fake platform and a few
+  checks assume the pre-fix engine and the pre-observation platform
+  (00_Project_State.js item 18). That file was outside the 2026-11-03
+  authorization and was not edited.]
   Impact: the first real run is the first real-GAS evidence this project
   would have, for P3, P6, P7 and the lock behavior. One execution cannot
   show — and REAL_GAS_REQUIRED keeps listing — mutual exclusion between
@@ -730,14 +819,24 @@ ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   released, getLastRow on long-lived tabs, and latency under contention.
   The file is pushed (its name matches neither ignore pattern), so it
   sits in the Apps Script project until removed.
+  [Added 2026-11-03: the first run confirmed the first sentence and the
+  second: it gave real observations for P3, P6 and P7 and could not test
+  the lock. Only option (C) of the Options above, two overlapping
+  executions, can test mutual exclusion and the lock's release paths; it
+  is still not built (PENDING DECISIONS).]
   Next Steps: owner side — push, set EXEC_OS_SPREADSHEET_ID, run once,
   return the whole Execution log (00_Project_State.js item 14f); decide
   item 15 (the exception, the file name, whether the file stays in the
-  pushed set after its first run).
+  pushed set after its first run). [Updated 2026-11-03: the run is done;
+  next, the owner pastes the new 15_TruthEngine.js in and runs the gate
+  again; the Node suite of the gate needs an authorized update (item
+  18).]
   Related ADRs: ADR-022 (the subject); ADR-021 (it is a pushed file);
   ADR-012 and BR-10 (the guard); ADR-018; ADR-024.
   Review Trigger: the first real run's log; the owner declining the
-  exception or renaming the file.
+  exception or renaming the file. [Added 2026-11-03: the second run's log;
+  any check that reports PASS for a reason the run cannot support, as the
+  OS wording above might.]
 
 ADR-024 — Verification and reporting discipline applied at every checkpoint
   Status: PROPOSED — a practice in use since the first checkpoint and
@@ -817,7 +916,18 @@ detail (EP2); this list only points to it.
     its first run. (item 15; ADR-023)
   - Whether to build a protocol with two overlapping executions
     (mutual exclusion; flush-before-release). Not built; only if the
-    owner asks. (ADR-023)
+    owner asks. (ADR-023) [2026-11-03: the first run showed one execution
+    cannot test the lock, because the platform grants a second lock
+    object there.]
+  - (added 2026-11-03) Whether P11's apostrophe prefix is kept or such
+    strings are refused instead, decided after the gate is re-run with
+    the new 15_TruthEngine.js (group PT.A); and whether the P7 grid-growth
+    guard stays now that the platform grows the grid by itself. (item 11;
+    ADR-022)
+  - (added 2026-11-03) Updating the gate's Node suite,
+    90_UnitTests_Test.js, which now has 26 failing checks against the new
+    engine and was outside the 2026-11-03 authorization. Needs its own
+    go-ahead (ADR-020). (item 18; ADR-023)
   - Where the scratch verification tools live: outside the repository
     so far. (item 16)
   - Syncing Execution_OS_Architecture_v0.8.md section 9, and its stale

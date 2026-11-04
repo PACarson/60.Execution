@@ -19,7 +19,10 @@ the count of seven built source files was unchanged by it. Updated
 verification gate for 15_TruthEngine.js; it is built and sandbox-tested
 but has not been run in Apps Script. Updated 2026-11-01: no file was
 added or renamed; the naming rules under DEPLOYMENT CONFIGURATION are
-now marked PROPOSED (ADR-021) and the TESTING entry points to ADR-023.)
+now marked PROPOSED (ADR-021) and the TESTING entry points to ADR-023.
+Updated 2026-11-03: no file was added or renamed; the gate HAS now been
+run once in Apps Script and 15_TruthEngine.js was changed after it (the
+two entries below say so).)
 Extension is .js per
 Steven's confirmed convention, confirmed 2026-09-12 to exactly match
 UEF v1.12's D8 decision (read directly, not from ecosystem memory).
@@ -133,7 +136,16 @@ FOUNDATION (10-19)
                              field shape, only that an append is
                              locked and safe. BUILT — checkpointed and
                              passed 2026-10-26 (54/54 sandbox tests;
-                             not verified in real GAS). Actual shape:
+                             not verified in real GAS). Changed
+                             2026-11-03 after the gate's first real run
+                             found two defects: a string over 50000
+                             characters is now refused before the lock,
+                             and a string starting with "=" or an
+                             apostrophe is written with one apostrophe
+                             in front (PROPOSED P10 and P11, ADR-022);
+                             67/67 sandbox tests; the first real run
+                             observed part of it in Apps Script, the
+                             new code has not been run there. Actual shape:
                              append(tabName, record) only — no
                              Spreadsheet-ID parameter (it always uses
                              Config's Spreadsheet), append-only (no
@@ -252,8 +264,17 @@ TESTING (90-99)
                              a Domain OS name. BUILT 2026-10-31 — 65/65
                              sandbox tests of the gate itself (in
                              90_UnitTests_Test.js, Node-only, never
-                             pushed); NOT yet run in Apps Script, so it
-                             has produced no real-GAS evidence so far.
+                             pushed) when built; NOT yet run in Apps
+                             Script, so it has produced no real-GAS
+                             evidence so far. [Updated 2026-11-03: it
+                             ran once, 2026-11-03, and produced the
+                             first real-GAS evidence (PASS 5, FAIL 2,
+                             INCONCLUSIVE 2, SKIPPED 1); the gate is
+                             unchanged, but 26 of its 65 sandbox tests
+                             now fail against the changed
+                             15_TruthEngine.js because their fake
+                             platform is out of date — 00_Project_
+                             State.js item 18.]
                              It cannot show mutual exclusion between
                              two overlapping executions, or the effect
                              of flushing before the lock is released;
