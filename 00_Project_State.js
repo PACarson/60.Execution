@@ -2,11 +2,22 @@
 =====================================================================
 EXECUTION OS — PROJECT STATE
 =====================================================================
-Last updated: 2026-11-03 (TruthEngine fix after the first real-GAS run
-of the gate: P10 per-cell length guard and P11 apostrophe prefix in
-15_TruthEngine.js, its test updated, governance synced — see its entry
-in the checkpoint log, WHAT IS STILL OPEN items 11, 14, 15, 17 and 18,
-and ADR-022 and ADR-023 in 00_ADR_Log.js; before that 2026-11-01: audit
+Last updated: 2026-11-08 (window-end audit, persistence and handoff — no
+code changed: ADR-025 added; notes in ADR-020, ADR-021 and ADR-024; the
+ADR ranges brought to ADR-025; NEXT ACTION now starts a new window from
+Execution_OS_Checkpoint_Handoff_2026-11-08.md — see its entry in the
+checkpoint log, WHAT IS STILL OPEN items 14 and 17, and 00_ADR_Log.js;
+before that 2026-11-07: the gate's second real-GAS run recorded and the
+gate's own Node suite repaired — 90_UnitTests_Test.js, 71 checks, all
+passing; 15_TruthEngine.js and its test changed only in comments and
+printed notes — see its entry in the checkpoint log, WHAT IS STILL OPEN
+items 9, 11, 14, 15, 16, 18 and 19, and ADR-022 and ADR-023 in
+00_ADR_Log.js; before that 2026-11-03: TruthEngine fix after the first
+real-GAS run of the gate: P10 per-cell length guard and P11 apostrophe
+prefix in 15_TruthEngine.js, its test updated, governance synced — see
+its entry in the checkpoint log, WHAT IS STILL OPEN items 11, 14, 15, 17
+and 18, and ADR-022 and ADR-023 in 00_ADR_Log.js; before that
+2026-11-01: audit
 and persistence checkpoint, no code
 changed — see its entry in the checkpoint log, ADR-019 to ADR-024 in
 00_ADR_Log.js, WHAT IS STILL OPEN item 16 and Execution_OS_Checkpoint_
@@ -27,15 +38,18 @@ the full audit that update was based on) except where marked "updated
 2026-10-24" / "updated 2026-10-26" / "updated 2026-10-27" / "added
 2026-10-27" / "updated 2026-10-31" / "added 2026-10-31" / "updated
 2026-11-01" / "added 2026-11-01" / "updated 2026-11-03" / "added
-2026-11-03". The
+2026-11-03" / "updated 2026-11-07" / "added 2026-11-07" / "updated 2026-11-08" / "added
+2026-11-08". The
 IMPLEMENTATION CHECKPOINT LOG below was kept current through 2026-10-06
 (14_Versioning.js) when the 2026-10-24 repair was made, while this
 header was not — which that repair corrected; the 2026-10-26 entry
 (15_TruthEngine.js), the 2026-10-27 entry (deployment configuration) and
 the 2026-10-31 entry (GAS-native gate) were each added together with the
 header update, so the two agree again, as does the 2026-11-01 entry
-(audit and persistence, no code) and the 2026-11-03 entry (TruthEngine
-fix after the first real-GAS run).
+(audit and persistence, no code), the 2026-11-03 entry (TruthEngine
+fix after the first real-GAS run), the 2026-11-07 entry (second
+real-GAS run recorded, the gate's Node suite repaired) and the 2026-11-08
+entry (window-end audit, persistence and handoff, no code).
 
 GOVERNANCE STATUS: Governance Reconciliation Closed / Governance
 Ready. This is NOT the same as ready for implementation — per
@@ -51,11 +65,18 @@ time, each on its own authorization. The paragraph above is the
 [Updated 2026-11-01: the per-file rule is recorded as ADR-020 and the
 work boundary (only Execution OS is modified) as ADR-019, both Accepted
 in 00_ADR_Log.js; the owner's words are quoted there.]
+[Updated 2026-11-08: the owner restated the stop-after-checkpoint rule in
+his request of 2026-11-08 06:55 and asked that every decision of the
+window be written into a Governance file and the ADR Log, an unsettled
+one marked pending or PROPOSED, not only into a checkpoint; ADR-020
+carries the note. The same request was the go-ahead for the 2026-11-08
+checkpoint.]
 
 DESIGN VERSION: v0.8 (Execution_OS_Architecture_v0.8.md) — NOTE: the
 Architecture doc's own section 9 has not yet been updated to reflect
-ADR-013 through ADR-024 (the ADR-013/014 evidence updates and ADR-015
-through ADR-024); that sync is a tracked gap, not done as part of this
+ADR-013 through ADR-025 (the ADR-013/014 evidence updates and ADR-015
+through ADR-025; this read ADR-024 until 2026-11-08, when ADR-025 was
+added); that sync is a tracked gap, not done as part of this
 update (see WHAT IS STILL OPEN, item 3 — this cross-reference said
 "item 7" until 2026-10-24, which is the UEF Scope-line question; the
 Architecture doc's own header, "code: none" and "UEF >= 1.3", is stale
@@ -76,7 +97,7 @@ Checkpoint_Handoff_2026-10-08.md section 3). 15_TruthEngine.js is the
 first and only file that writes to a Sheet, and nothing calls it yet.
 [Updated 2026-11-03: the test count for 15_TruthEngine.js and "never in
 real GAS" above are superseded for part of the code — see the [Added
-2026-11-03] paragraph below.]
+2026-11-03] paragraph below, and the [Added 2026-11-07] one after it.]
 Not started: 16_EventLog.js, 17_ReferenceBase.js, 19_Utils.js,
 20_Router.js / 21_Parser.js, and every Slice 1-5 Engine. Nothing has
 run against a real Spreadsheet, and no Telegram command or AI call
@@ -101,7 +122,10 @@ gate has NOT been run in Apps Script: until the owner runs it and the
 log is reviewed it has produced no real-GAS evidence of anything, and
 the sentence above still holds. [Updated 2026-11-03: the owner ran it
 once, 2026-11-03, and the log was reviewed; "65 checks, all passing" no
-longer holds either. See the [Added 2026-11-03] paragraph below.]
+longer holds either. See the [Added 2026-11-03] paragraph below.
+Updated 2026-11-07: the gate was run a second time, and its Node suite
+is repaired and passes again, with 71 checks; see the [Added 2026-11-07]
+paragraph below.]
 [Added 2026-11-01] Audit result, no code changed: before any edit, the
 working directory was content-diffed against the accepted 2026-10-31
 delivery and matched byte for byte (29 files). No implementation is in
@@ -140,6 +164,47 @@ there, on the paths TruthEngine uses; 11_Schema.js, 12_Identity.js,
 13_EventDefinitions.js and 14_Versioning.js were loaded without error but
 none of their functions was called. Still unobserved: the lock's mutual
 exclusion between two executions and flush-before-release.
+[Added 2026-11-07] Second real-GAS evidence, and the gate's Node suite
+repaired. On 2026-11-05 00:29 (Asia/Kuala_Lumpur; 2026-11-04T16:29Z) the
+owner pasted the changed 15_TruthEngine.js over the old one in the Apps
+Script editor, ran the gate once more and sent back the whole Execution
+log as a PDF. Result: PASS 7, FAIL 0, INCONCLUSIVE 2, SKIPPED 1, INFO 4,
+21245 ms; verdict INCOMPLETE (nothing failed; three lock checks could
+not conclude). OBSERVED: with P11 the three shapes that failed on
+2026-11-03 came back as typed (the "=" formula, the SUM formula and the
+leading apostrophe), PT.A 24 of 24 and PT.B 12 of 12 identical strings;
+with P10 the 50001-character string was refused before the lock with
+nothing written, and the next append landed on row 3. So the two
+defects found on 2026-11-03 are closed in real GAS, for the shapes the
+gate probes. The control re-typed the same 23 of 36 shapes as before.
+The lock checks stayed INCONCLUSIVE, INCONCLUSIVE and SKIPPED for the
+reason they had on 2026-11-03: a second getScriptLock() object was
+granted while the first was held, in this run too. What this run does
+not show: the OS check's PASS text says "so the lock was released", but
+on the P10 path the oversize string never takes the lock, so that text
+is not evidence for the lock (item 15); and the platform's own cell
+limit was not reached, so exactly 50000 characters and the unit it
+counts in are still unobserved. Counts: 90_UnitTests_Test.js now has 71
+checks and all pass (item 18 is done: its fake platform reproduces the
+control of both real runs, and checks 54 and 55 replay run 1 and run 2
+through the gate); the seven runtime suites still total 167, so the
+eight Node suites define 238 tests and all pass. Nothing else in the
+code changed: 15_TruthEngine.js and 15_TruthEngine_Test.js changed only
+in comments and in the notes the test prints, to record this run; the
+gate, 90_UnitTests.js, is unchanged. Still unobserved: the lock's mutual
+exclusion between two executions, the release paths and the timeout, and
+flush-before-release. A temporary probe for those exists outside the
+repository and has not been run (item 19).
+[Added 2026-11-08] Window-end audit, no code changed. Before any edit the
+repository was content-checked against the whole-tree manifest of the
+2026-11-07 checkpoint: 31 of 31 files matched, none missing, different or
+unlisted. Nothing is half-written and nothing is in flight: the last file
+work was the 2026-11-07 checkpoint, applied in full on 2026-11-08 06:35
+and ended in a STOP; the probe of item 19 (outside the repository) was
+delivered and has never been run; 16_EventLog.js is not started. The
+eight Node suites are 238/238, unchanged and re-run at this checkpoint.
+The code is as it was on 2026-11-07, byte for byte. The real-GAS evidence
+is what the two runs of the gate showed, above, and nothing more.
 
 DEFINITION-OF-READY / DONE / PRODUCTION-READY STATUS (per UEF S0.5):
   [NOT RE-DETERMINED as of 2026-10-24. The three verdicts below are
@@ -159,9 +224,9 @@ DEFINITION-OF-READY / DONE / PRODUCTION-READY STATUS (per UEF S0.5):
   Definition of Production-Ready: NOT MET, not applicable yet.
 
 WHAT IS ACCEPTED (design-level, not code-level) — see 00_ADR_Log.js
-for the full list of ADR-000 through ADR-020 (ADR-021 to ADR-024 are
-PROPOSED, not accepted — see the block after this list). Headline
-items:
+for the full list of ADR-000 through ADR-020 and ADR-025 (ADR-021 to
+ADR-024 are PROPOSED, not accepted — see the block after this list;
+ADR-025 was added 2026-11-08). Headline items:
   - Execution OS is not a Domain OS; UEF fully adopted, Blueprint
     selectively adopted (ADR-001); this adoption is a voluntary
     extension beyond UEF's own literal Scope line, which does not
@@ -193,7 +258,15 @@ items:
     2026-11-01)
   - One file per explicit authorization; every checkpoint ends with a
     STOP (ADR-020; the owner's standing instruction, restated
-    2026-11-01; recorded as an ADR 2026-11-01)
+    2026-11-01; recorded as an ADR 2026-11-01). Restated again
+    2026-11-08, together with the rule that every decision of a window is
+    persisted in a Governance file and the ADR Log, not only in a
+    checkpoint (see ADR-020's note).
+  - How files reach Apps Script for the real-GAS runs so far: the owner
+    pastes them by hand (ADR-025, Accepted, narrow; the owner's own
+    choice "A，手动贴", relayed through a compaction summary; recorded as
+    an ADR 2026-11-08). Not a decision about later deployment: clasp is
+    set aside, not decided against.
 
 PROPOSED, NOT ACCEPTED (recorded 2026-11-01): built or in use, but the
 builder's choices, not confirmed by the owner. Do not read them as
@@ -205,7 +278,8 @@ decisions, and do not build on one as if it were settled:
   - ADR-023 real-GAS verification by the hand-run gate function in
     90_UnitTests.js (item 15)
   - ADR-024 verification and reporting discipline (item 9 may take it
-    into a Definition of Done)
+    into a Definition of Done; rules 7 to 9 added 2026-11-08, also
+    PROPOSED)
 
 RESOLVED 2026-09-12 (were items 1/2/3/5/6 below — see
 Execution_OS_Governance_Reconciliation_2026-09-12.md for full
@@ -241,9 +315,10 @@ WHAT IS STILL OPEN:
      source-level evidence satisfies that requirement is the project
      owner's call.
   3. Architecture_v0.8.md's section 9 (the reasoning record) has not
-     been updated to match ADR-013 through ADR-024 in 00_ADR_Log.js
-     (the ADR-013/014 evidence updates and ADR-015 to ADR-024; ADR-019
-     and ADR-020 are Accepted, ADR-021 to ADR-024 PROPOSED). Its
+     been updated to match ADR-013 through ADR-025 in 00_ADR_Log.js
+     (the ADR-013/014 evidence updates and ADR-015 to ADR-025; ADR-019,
+     ADR-020 and ADR-025 are Accepted, ADR-021 to ADR-024 PROPOSED; it
+     read ADR-024 until 2026-11-08). Its
      header ("code: none", "UEF >= 1.3") is stale for the same reason.
      Documentation drift (EP2), tracked here, not yet fixed.
   4. AI Provider Interface's (ADR-015) exact request/response shape
@@ -282,7 +357,9 @@ WHAT IS STILL OPEN:
      kind of evidence, for 15_TruthEngine.js only; it has not been run.
      2026-11-03: it was run once and gave this project's first real-GAS
      evidence, for one file — see the 2026-11-03 checkpoint-log entry.
-     The verdicts above are still not re-determined.)
+     2026-11-05: it was run a second time, against the changed file;
+     nothing failed (2026-11-07 entry). The verdicts above are still not
+     re-determined.)
  10. (added 2026-10-25) The read mechanism for Domain data is not
      settled between the two projects' own wording. Execution's
      ADR-003/ADR-012 plan Spreadsheet-level reads (the Domain-shared
@@ -334,6 +411,19 @@ WHAT IS STILL OPEN:
      partial row. For the owner: P11 against the alternative of refusing
      such strings, and whether the P7 guard stays. P1-P9 and P10-P11 all
      remain PROPOSED until the owner confirms them.)
+     (2026-11-07: the second run happened, 2026-11-05. P11 held on the
+     real platform for every shape the gate probes: the "=" formula, the
+     SUM formula and the leading apostrophe came back as typed (PT.A 24
+     of 24, PT.B 12 of 12). On this evidence the fallback of refusing
+     such strings is not needed; whether P11 is kept is still the
+     owner's call. P10: the 50001-character string was refused before
+     the lock with nothing written; exactly 50000 characters and the unit
+     the platform counts in are still not observed. P3: over the two
+     runs one append took 554 to 1465 ms with no contention, which makes
+     10000 ms roughly seven to eighteen queued appends of that length;
+     behavior under contention is unobserved. P7: unchanged, the guard
+     still costs nothing. All of P1-P11 remain PROPOSED until the owner
+     confirms them.)
  12. (added 2026-10-26) UCR6's primary text (UEF v1.12) is not in this
      repository. 15_TruthEngine.js was checked only against
      00_File_Map.js's one-sentence paraphrase of it; what "validated"
@@ -387,6 +477,16 @@ WHAT IS STILL OPEN:
         they and the 00_ files were removed it ran. To run the gate again
         with the new 15_TruthEngine.js, paste that one file over the old
         one and run runTruthEngineGate() again.
+        [Updated 2026-11-07: done, 2026-11-05 00:29, by the same
+        hand-paste; see the 2026-11-07 entry. a., b. and e. still stand.]
+     h. (added 2026-11-08) The route in g is the owner's own choice, now
+        recorded as ADR-025 (Accepted, narrow): hand-paste, "A，手动贴".
+        Until 2026-11-08 it was recorded here only as a fact, not as a
+        decision. It sets clasp aside for the real-GAS runs so far; it
+        does not decide against clasp, so a., b. and e. stay open. What it
+        leaves unchecked: nothing compares the Apps Script project's files
+        with the repository (ADR-018 checks the repository only), and a
+        log does not prove which version of a file was pasted.
  15. (added 2026-10-31) 90_UnitTests.js writes to the Spreadsheet
      directly in a few places — it creates and deletes its own temporary
      ZZ_EXEC_GATE_ tabs and their header rows, writes control rows into
@@ -412,6 +512,15 @@ WHAT IS STILL OPEN:
      The gate's Node suite needs an authorized update (item 18). The
      exception, the file name and whether the file stays in the pushed set
      are still the owner's call.]
+     [Updated 2026-11-07: the second run confirmed this: OS PASSED, and
+     its text still says "so the lock was released", which on the P10 path
+     is not evidence for the lock, because the engine refuses the string
+     before it takes the lock. The gate's Node suite now says so (check
+     37 and its variant 37a). Rewording the gate's PASS text is a change
+     to 90_UnitTests.js, which is its own authorization and would need
+     another real run; it was NOT done. The Node suite is repaired
+     (item 18). The exception, the file name and whether the file stays in
+     the pushed set are still the owner's call.]
  16. (added 2026-11-01) The tools behind several of this log's sandbox
      numbers are not in the repository. The 8 Node suites (219 checks)
      are, and anyone can re-run them. But the 45-check deployment
@@ -434,6 +543,20 @@ WHAT IS STILL OPEN:
      2026-11-03 checkpoint as a separate file outside the repository tree,
      like the earlier copy. The gate's 52-mutant run was not repeated: the
      gate is unchanged, and its suite is the one that is red.]
+     [Updated 2026-11-07: the Node suites are 238 checks and all pass
+     (167 + the gate's 71). The repaired suite of the gate was tried
+     against 16 planted defects in throw-away copies outside the
+     repository (8 in its fake platform, 6 in the engine, 2 in the gate);
+     each made at least one check fail, and each of the 13 new or
+     rewritten checks failed under at least one of them. The scripts for
+     that and for the replays are delivered with the 2026-11-07
+     checkpoint as a separate archive outside the repository tree, like
+     the earlier ones. The TruthEngine 46-mutant run and the gate's
+     52-mutant run were both repeated on the 2026-11-07 files: 46 and 52
+     planted defects, all caught, none survived. The code of 15_TruthEngine.js
+     and of the gate did not change, so the 46-mutant run shows that the
+     refreshed comments broke nothing and the 52-mutant run that the
+     repaired suite lost none of its power to catch a defect in the gate.]
  17. (added 2026-11-03) .claspignore is not in the owner's copy of the
      repository. The 2026-11-01 handoff's manifest lists it, and the
      2026-10-27 entry built it, but the working copy the owner supplied on
@@ -446,6 +569,11 @@ WHAT IS STILL OPEN:
      NOT rebuilt from memory and nothing in this checkpoint created it.
      Open: whether it is restored before the first real clasp push (ADR-021
      records its two patterns), and which copy governs if the two differ.
+     [Updated 2026-11-08: the owner's choice of hand-paste is now ADR-025.
+     .claspignore is still absent from the owner's copy; 00_File_Map.js
+     (DEPLOYMENT CONFIGURATION) and the 2026-11-01 handoff's manifest
+     still list it, and 00_File_Map.js now carries a note saying so.
+     Nothing was restored or rebuilt.]
  18. (added 2026-11-03) The gate's Node suite, 90_UnitTests_Test.js, is
      out of step with the engine and with what the first real run showed.
      Against the new 15_TruthEngine.js, 26 of its 65 checks fail and 39
@@ -471,6 +599,72 @@ WHAT IS STILL OPEN:
      (ADR-020); it needs its own go-ahead. Until then the repository holds
      a known-red suite, and any "all suites pass" statement about it must
      say so.
+     [Updated 2026-11-07: DONE, under the go-ahead recorded in the
+     2026-11-07 checkpoint-log entry (ADR-020). 90_UnitTests_Test.js has
+     71 checks and all pass; the other seven suites still pass (167).
+     (a) Its fake platform now reproduces what the real Spreadsheet did
+     with the control in both runs, the same 23 of 36 shapes (17 of 24 in
+     PT.A, 6 of 12 in PT.B): "+3", the ISO timestamp and the 20-digit
+     number stay strings, and a leading "=" or apostrophe is evaluated or
+     consumed in plain-text cells too (OBSERVED, runs 1 and 2). The
+     "apostropheEaten" knob was folded into that. Check 2 now pins the
+     list of the 23 names. The rule behind the 23 is a guess for any
+     string outside those 36; the file says so. (b) Checks 11, 12, 13, 19,
+     37 and 43i were rewritten as the six causes above call for, using
+     engine variants made by exact-string replacement: one without P11 and
+     one without P10. Checks 11a, 12a, 19a and 37a keep the old coverage
+     under those variants. Checks 11a and 19 test the new behavior: with
+     P10 a counter in the fake shows that the oversize cell never reaches
+     the platform, whatever the platform would have done with it. (c)
+     Checks 54 and 55 replay the two real runs through the gate. The engine
+     as it was on 2026-11-03 (the current file with P10 and P11 removed;
+     in a scratch comparison it behaved identically to the 2026-11-01
+     file, logs included, on nine platform configurations) on the
+     platform run 1 showed gives PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1,
+     INFO 4, with OS saying "moved from 2 to 3", as the real log did. The
+     current engine on the platform run 2 showed gives PASS 7, FAIL 0,
+     INCONCLUSIVE 2, SKIPPED 1, INFO 4, verdict INCOMPLETE, as the real
+     log did. (d) The notes printed at the end of the file were brought up
+     to date. The gate itself, 90_UnitTests.js, is unchanged. The repository
+     no longer holds a known-red suite.]
+ 19. (added 2026-11-07) A temporary probe for two overlapping executions
+     exists outside the repository and has NOT been run. The second real
+     run left the lock checks INCONCLUSIVE and SKIPPED (one execution can
+     take the script lock twice), and the owner asked how to verify them
+     (2026-11-05 16:09, "请教我要怎么做/验证"). The builder wrote a
+     throw-away Apps Script file, ZZ_Probe.js (version 2026-11-06, 1319
+     lines, ASCII only, sha256
+     8950776e807f48da714a32403e4b7cc37284e71d8994f9f3feacd38c7f297c68),
+     and delivered it on 2026-11-06 with step-by-step instructions. It is
+     NOT part of the repository and is not listed in 00_File_Map.js: it is
+     meant to be pasted into the Apps Script project, run, and deleted
+     again. It calls TruthEngine.append and Config as they are and writes
+     only tabs named ZZ_EXEC_PROBE_* and Script Properties named ZZP_*.
+     Two editor tabs run zzpRunA and zzpRunB side by side and meet through
+     Script Properties; zzpVerify then prints verdicts on: whether two
+     appends that overlap without the lock lose rows (a control, INFO),
+     whether the engine's lock keeps every row on the row it reported,
+     how long an append takes under contention (INFO), the lock's release
+     after a success and after a failed append, the lock-timeout error,
+     and that a waiting append succeeds once the lock is freed. A separate
+     single-execution function, zzpBoundary, tries a string of exactly
+     50000 characters, which unit the limit counts in (UTF-16 units or
+     bytes) and strings that start with "+", "-" or "@". Its time
+     constants are PROPOSED. It was exercised only in a Node sandbox:
+     worker threads stand in for executions around a fake shared
+     Spreadsheet, Script Properties and script lock on a virtual clock. A
+     full run of the sandbox scenarios, with 7 planted engine defects, 2
+     planted probe defects and 5 models of the platform's cell limit,
+     came out as expected. That sandbox is a fake: it shows that the
+     probe's logic works and says nothing about real Apps Script. Until
+     the owner runs it and sends the logs it has produced no evidence of
+     any tier. Whether it, or the part worth keeping, is folded into the
+     gate is ADR-023's option (C), still NOT decided; folding it in is a
+     change to a repository file and needs its own go-ahead and another
+     real run. On 2026-11-06 the owner said he could not run tests that
+     day and asked whether development could continue; the builder kept
+     to ADR-020 and prepared the 2026-11-07 patches outside the
+     repository first (see that entry).
 
 IMPLEMENTATION CHECKPOINT LOG (per UEF v1.12 S0.6 item 4, adopted
 2026-09-12 — Decision 3 of the Post-Reconciliation brief). Scaffolded
@@ -1278,6 +1472,322 @@ project cannot create that file itself).
       pushed to or run in Apps Script by this checkpoint; 16_EventLog.js and
       every other new file not started; Personal Life OS not touched. The
       checkpoint ends here: a STOP.
+    2026-11-07 — Item 18: the gate's Node suite repaired and the gate's
+      second real run recorded (90_UnitTests_Test.js changed; the
+      comments of 15_TruthEngine.js and of its test refreshed; four
+      governance files synced; no runtime code, no gate code and no other
+      test or deployment file changed). The patch was prepared in a
+      scratch copy outside the repository between 2026-11-06 and
+      2026-11-08, with the repository untouched, and applied on the date
+      given below.
+      Authorized by:
+      the owner's answer, read by the builder on 2026-11-08 at 06:35
+      Asia/Kuala_Lumpur, to the builder's one question "要把哪些文件写进仓库?
+      写完我会核对哈希、交付改动包,然后停下,不会开始 16_EventLog.js。": he
+      chose "全部 7 个文件(推荐)", whose text read "90_UnitTests_Test.js(修好
+      门禁的测试,71 项全过);15_TruthEngine.js 与其测试(只改注释,代码逐字节
+      不变);4 个治理文件(记录第二次真机运行)". The other options were "只写
+      测试+治理(5 个)", "只写治理(4 个)" and "先别动仓库". The four governance
+      files are named under Scope respected. These are the owner's words as
+      a tap on a listed option, not a typed sentence; the go-ahead of
+      ADR-020 is therefore that option's text, and its scope is exactly the
+      seven files below, no more.
+      How it was asked. The second run's log reached the builder on
+      2026-11-05 and its record waited for this go-ahead: a governance
+      file is a repository file, and ADR-020 gives each checkpoint its own
+      authorization. On 2026-11-05 the owner asked how to verify the lock
+      ("请教我要怎么做/验证"); on 2026-11-06 he said he could not test
+      that day and asked whether development could continue. The builder
+      kept to ADR-020: it prepared the patch outside the repository,
+      built a probe for the lock outside it too (item 19), and asked one
+      question that listed the files. The owner's bare "继续" messages of
+      2026-11-06, 2026-11-07 and 2026-11-08 were read as "go on with what
+      is already authorized", which here meant more of that preparation;
+      none was read as a go-ahead for a repository file (the builder's
+      reading, PROPOSED).
+      Checkpoint Integrity Gate (ADR-018). The repository was
+      content-checked against the sha256 manifest of the 2026-11-03
+      delivery twice before anything was applied: on 2026-11-07 06:13 (the
+      30 non-zip files) and on 2026-11-08 (all 31 files, the zip
+      included). Every file matched; nothing was missing, added or
+      different.
+      Applied on 2026-11-08, after the go-ahead above. The same check was
+      repeated immediately before copying (31 of 31 files matched and no
+      file was unlisted; the applier script refuses otherwise), and again
+      after copying: the seven files named under Scope respected equal
+      the patched files (their sha256 values are in the delivery's
+      SHA256SUMS_changed_files.txt) and the other 24 files still match
+      the 2026-11-03 manifest; the new whole-tree manifest is
+      MANIFEST_whole_tree_after_2026-11-07.txt in the same delivery.
+      Evidence: the owner's copy of the Execution log from the gate's
+      second real run (2026-11-05 00:29 Asia/Kuala_Lumpur; sent
+      2026-11-05 00:31), as a PDF (the builder's copy has sha256
+      fd7d06a238bb1ddf...). Content: PASS 7, FAIL 0, INCONCLUSIVE 2,
+      SKIPPED 1, INFO 4, 21245 ms, verdict INCOMPLETE; the Spreadsheet
+      ended with the one tab it started with. It is recorded in ADR-022,
+      ADR-023 and the [Added 2026-11-07] paragraph in this file's header.
+      The log carries the changed engine's messages (the oversize
+      refusal text of P10, for one); it does not carry a hash of the file
+      that was pasted, so that this was the 2026-11-03 file byte for byte
+      is not something the log proves.
+      Findings, kept apart (ADR-024). Production defects: none found. The
+      two of 2026-11-03 are closed in real GAS for the shapes the gate
+      probes (OBSERVED, run 2: PT.A and OS, which failed in run 1,
+      PASSED). Harness bugs: none in the gate's code. One weakness in its
+      wording, NOT changed: OS's PASS text says "so the lock was
+      released", but on the P10 path the oversize string never takes the
+      lock, so that text is no evidence about the lock (item 15; a change
+      to the gate is its own authorization and another real run). Stale
+      test scaffolding, repaired: the fake platform and six checks of
+      90_UnitTests_Test.js (item 18); 26 of its 65 checks had been
+      failing since 2026-11-03. My own mistakes: (a) and (b) of
+      2026-11-03 stand. New: (c) while drafting the ADR-023 note I wrote
+      that the gate's 52-mutant run need not be repeated because the gate
+      did not change; that run exercises the Node suite, which had just
+      been rewritten; found before delivery, the run was repeated and
+      caught 52 of 52. (d) One planted defect on my own list, an edit of
+      the lock mode, changed nothing; it was dropped and is not counted.
+      (e) Three slips in the probe of item 19, each caught by its own
+      sandbox run before the probe was delivered: a wrong expectation for
+      one planted defect (the expectation was wrong, not the probe); a
+      raw write of a lone "=" that could abort the boundary test (now
+      guarded per shape); a file-writing tool that turned unicode escape
+      sequences into literal characters (now built with
+      String.fromCharCode).
+      What changed. 90_UnitTests_Test.js (1277 -> 1428 lines; 65 -> 71
+      checks): the header comments (the platform model is now OBSERVED;
+      the cell-limit setting matters only to an engine without P10); the
+      fake platform, whose model of what a plain-text cell keeps now
+      reproduces the control of both real runs (the same 23 of 36 shapes
+      re-typed, 17 of 24 in PT.A and 6 of 12 in PT.B; a leading "=" is
+      evaluated and a leading apostrophe consumed even in a plain-text
+      cell; "+3", the ISO timestamp and the 20-digit number stay
+      strings), with the old "apostropheEaten" setting folded into it and
+      a counter of the oversize writes that reach the platform; helpers
+      that make an engine variant by exact-string replacement (without
+      P10, without P11, lock released only on success) and the list of
+      the 23 names; checks 2, 11, 12, 13, 19, 37 and 43i rewritten;
+      checks 11a, 12a, 19a and 37a added (the old coverage, run on the
+      engine variants); checks 54 and 55 added (the two real runs
+      replayed through the gate); the notes printed at the end brought up
+      to date (what is OBSERVED, what is still open). 15_TruthEngine.js:
+      comments only, in the header (the Changed note, a second OBSERVED
+      block, notes on P3, P10 and P11, the DOES NOT OWN wording); from the
+      closing terminator of the header to the end of the file it is
+      byte-identical (12937 characters). 15_TruthEngine_Test.js: comments
+      and printed notes only (header lines on two real runs, assumption d
+      now OBSERVED, the REAL_GAS_REQUIRED notes); the code between the
+      header and those notes is byte-identical (47181 characters); 67
+      checks. Governance: this file (header, CODE STATE, items 9, 11, 14,
+      15, 16 and 18, new item 19, this entry, NEXT ACTION), 00_ADR_Log.js
+      (notes in ADR-022 and ADR-023, three PENDING DECISIONS
+      annotations), 00_File_Map.js and 00_Project_Constitution.js (status
+      sentences). 00_Business_Rules.js unchanged: no rule's status
+      changed. No ADR was added and none changed Status.
+      Verification, sandbox only (tier: Node, fake platform). The eight
+      suites pass, 238/238 (10_Config 14, 11_Schema 18, 12_Identity 17,
+      13_EventDefinitions 17, 14_Versioning 24, 60_Observability 10,
+      15_TruthEngine 67, 90_UnitTests 71); the repository no longer holds
+      a known-red suite. Planted defects (one deliberate break at a time
+      in a throw-away copy; a check that does not fail on one is
+      vacuous): 16 against the repaired gate suite, 8 in its fake
+      platform, 6 in the engine and 2 in the gate, each caught, and each
+      of the 13 new or rewritten checks failed under at least one of
+      them; the 46 engine mutants of 2026-11-03 against the
+      comment-refreshed engine and its test, 46 caught and 0 survived;
+      the 52 gate mutants of the scratch tools against the repaired
+      suite, 52 caught and 0 survived. Replays through the gate: the
+      engine without P10 and P11, on the platform run 1 showed, gives
+      PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4 and the OS line
+      "moved from 2 to 3", as the real log did; the current engine on the
+      platform run 2 showed gives PASS 7, FAIL 0, INCONCLUSIVE 2, SKIPPED
+      1, INFO 4 and verdict INCOMPLETE, as the real log did. Equivalence:
+      the current engine with P10 and P11 removed behaves as the
+      2026-11-01 engine that run 1 exercised (sha256 0dceee1a..., as in
+      the 2026-11-01 handoff's manifest): the same reports and the same
+      log lines on nine platform settings. The shared-scope audit of the
+      seven runtime files and the integration smoke test pass; node
+      --check is clean on all 21 .js files; the five governance files are
+      comment-only, each with one opener and exactly one terminator, at
+      the end. The 45-check deployment harness was NOT re-run: it needs a
+      .claspignore, which the working copy lacks (item 17), and two npm
+      modules at hard-coded paths; no file that decides what is pushed
+      was changed.
+      Not verified, by anything here: that the lock keeps two overlapping
+      executions apart; the release paths and the timeout text on the
+      real platform; flush-before-release; that exactly 50000 characters
+      is accepted and which unit the platform counts in; strings that
+      start with "+", "-" or "@" beyond "+3" and "-7"; getLastRow() on
+      long-lived tabs; latency under contention; and that the probe of
+      item 19 works in real Apps Script, where it has never run. The
+      fake's rule for which strings the platform re-types is pinned only
+      on the 36 probe shapes; outside them it is a guess (the cut-off for
+      digit strings, 16 digits, is one).
+      Honesty notes. (1) Checks 54 and 55 pass because the fake was tuned
+      to reproduce the two real runs; they pin the fake to those
+      observations and would not have found a surprise in real GAS. Only
+      a new real run can. (2) The 16 planted defects and the nine
+      equivalence settings were chosen by the builder; they show that the
+      checks bite on those, not that no other defect hides. (3) The date
+      in the dated brackets written for this checkpoint, 2026-11-07, is
+      the day the drafts were written; the day they were applied is given
+      above. (4) The scripts behind the planted defects, the replays and
+      the equivalence run are in a scratch-tools archive delivered with
+      this checkpoint, outside the repository.
+      REAL_GAS_REQUIRED / owner-side: nothing new is needed for this
+      checkpoint. The open real-GAS item is still the lock: the probe of
+      item 19 (paste ZZ_Probe.js, run zzpSetup, then zzpRunA and zzpRunB
+      in two editor tabs at about the same time, then zzpVerify and
+      zzpCleanup; zzpBoundary on its own) and bring back the logs. It is
+      not required by this checkpoint and nothing else waits on it except
+      the lock checks.
+      Scope respected: only 90_UnitTests_Test.js, 15_TruthEngine.js
+      (comments), 15_TruthEngine_Test.js (comments and printed notes),
+      00_Project_State.js, 00_ADR_Log.js, 00_File_Map.js and
+      00_Project_Constitution.js were edited; 90_UnitTests.js (the gate),
+      every other runtime and test file, 00_Business_Rules.js,
+      appsscript.json and every Markdown document are byte-identical to
+      the 2026-11-03 state; no .claspignore or .clasp.json created;
+      nothing pushed to or run in Apps Script by this checkpoint; the
+      probe and the scripts are not in the repository; 16_EventLog.js and
+      every other new file not started; Personal Life OS not touched. The
+      checkpoint ends here: a STOP.
+    2026-11-08 — Window-end audit, persistence and handoff (no code
+      changed; four governance files edited and one handoff document
+      added; nothing else). The owner asked for it twenty minutes after the
+      2026-11-07 checkpoint had been applied and delivered, so there was
+      no work in progress to interrupt.
+      Authorized by: the owner's typed request of 2026-11-08 06:55
+      Asia/Kuala_Lumpur: "请立即暂停当前代码实现，不要继续 coding。 请从头重新检查
+      本窗口的全部讨论、决定、代码修改、测试、发现的问题和未完成事项，并对照当前实际
+      repository/file state 做一次完整核对。" It asked for the status in six
+      categories, a record of any half-done implementation, every
+      governance, architecture or engineering decision of the window
+      written into a Governance file and the ADR Log ("不要只写在 checkpoint
+      里"), an unsettled one marked pending or proposed, a downloadable
+      handoff file with seven named contents, and it ended: "完成 checkpoint、
+      Governance/ADR 持久化及核对后就停止，不要继续 coding". The go-ahead of
+      ADR-020 is that request; its scope is the governance files, the ADR
+      Log and one handoff document, no code. The audit began at once; the
+      working session was then compacted, and the owner's bare "继续"
+      messages of 2026-11-08 16:04 and 21:14 and of 2026-11-09 06:44
+      resumed it. They were read as "go on with what is already
+      authorized", which here is exactly this checkpoint (ADR-020; the
+      builder's reading, PROPOSED).
+      Checkpoint Integrity Gate (ADR-018). The repository was
+      content-checked against MANIFEST_whole_tree_after_2026-11-07.txt (31
+      files, the zip included) at the start of the audit and again at the
+      start of the editing stage: 31 of 31 matched, none missing, different
+      or unlisted. The edits were made in a scratch copy outside the
+      repository (ADR-024, proposed rule 7). The repository was written
+      once, by an applier that refuses unless the same check passes
+      immediately before; after writing, the four governance files and the
+      handoff equal the scratch files and the other 27 files still equal
+      the manifest (the delivery's SHA256SUMS_changed_files.txt and
+      MANIFEST_whole_tree_after_2026-11-08.txt show the values).
+      What the audit read, and its limits. The repository (31 files,
+      hashed); the passages of the governance files that state a status, a
+      count, an ADR range, a file list or a next step; the 2026-11-01
+      handoff in full; the deliveries of 2026-11-03, 2026-11-07 and the
+      scratch-tools archives; and the working session's own record. The
+      raw messages of 2026-11-02 to 2026-11-06 are not on disk: the
+      transcript on disk began at 2026-11-06 14:40 when the audit started,
+      and began at 2026-11-08 07:00 after a further compaction during this
+      checkpoint. Everything earlier survives only as compaction summaries
+      and as what was persisted; an instruction that was never persisted
+      anywhere would not show up. The owner's words quoted in ADR-025 come
+      from the list of his messages in such a summary, not from the
+      messages. The audit re-derived from saved outputs: the 46 and the 52
+      planted defects (46 of 46 and 52 of 52 caught), the 16 planted
+      defects of the gate's repaired suite (8 in its fake platform, 6 in the
+      engine, 2 in the gate; all red) and that each of the 13 new or
+      rewritten checks is red under at least one of them. It did not
+      repeat those runs: no code or test file has changed since.
+      Findings, kept apart (ADR-024). Production defects: none found, and
+      nothing was run in real GAS by this checkpoint. Harness bugs: none.
+      Governance gaps, all documentation, all closed in this checkpoint:
+      (a) the owner's choice of hand-paste (item 14g) was recorded only as
+      a fact, never as his decision: ADR-025 now records it, as Accepted
+      and narrow; (b) ADR-024's rule 3 still quoted the numbers of
+      2026-11-01 (28 and 52): a dated note; (c) NEXT ACTION and the header
+      still sent a new window to the 2026-11-01 handoff, whose sections on
+      the current state are stale: they now name the 2026-11-08 handoff;
+      (d) range statements in the current text ("ADR-013 through
+      ADR-024", "ADR-000 through ADR-020") now take in ADR-025 where they
+      describe the present; dated entries of earlier days were not
+      rewritten; (e) the
+      owner's working conventions (replies in Chinese, never address him
+      by name) lived only in the 2026-11-01 handoff: now also in the
+      Constitution, labelled as that handoff records them; (f) 00_File_Map.js
+      listed no record documents and said nothing of the absent
+      .claspignore: a RECORD DOCUMENTS block and a note; (g) the owner's
+      request of 2026-11-08 and its content rule were in no governance
+      file: ADR-020's note. My own mistakes: none new found in this
+      checkpoint's work; (a) and (b) of 2026-11-03 and (c) to (e) of
+      2026-11-07 stand.
+      What changed. 00_ADR_Log.js: ADR-025 added; dated notes in ADR-020
+      and ADR-021; in ADR-024 a note that brings rule 3's numbers up to
+      date and adds rules 7 to 9, PROPOSED; the header (26 ADRs, the status
+      sentence, the provenance sentence); three PENDING DECISIONS
+      annotations. 00_Project_Constitution.js: a Code status note, a dated
+      paragraph of observed platform facts in PLATFORM CONSTRAINTS, a note
+      and a WORKING CONVENTIONS block in WORKING RULES, the ADR-024 line in
+      PROPOSED PRACTICES. 00_File_Map.js: header note, a note on
+      .claspignore under DEPLOYMENT CONFIGURATION, a RECORD DOCUMENTS block.
+      00_Project_State.js: header, GOVERNANCE STATUS bracket, DESIGN
+      VERSION, CODE STATE ([Added 2026-11-08]), WHAT IS ACCEPTED (two
+      bullets and a note on ADR-024), item 3, new sub-item 14h, a bracket
+      in item 17, this entry, NEXT ACTION. New file:
+      Execution_OS_Checkpoint_Handoff_2026-11-08.md, the file a new window
+      reads first (its section 3 holds the six-category status with what
+      each item was verified against; section 4 the implementation
+      checkpoint). 00_Business_Rules.js unchanged: no rule's status
+      changed, and BR-9 already says that governance stays synchronized.
+      No ADR changed Status; ADR-025 is new.
+      Verification (files and sandbox only). The eight Node suites pass,
+      238/238, the same counts as on 2026-11-07, re-run after the last
+      edit; node --check is clean on all 21 .js files; the five governance
+      files are comment-only, each with one opener and exactly one
+      terminator, at the end; every file other than the four edited
+      governance files and the new handoff equals the 2026-11-07 manifest.
+      The handoff's table of the window's decisions (its section 2, 14
+      rows) was checked row by row: 44 anchor texts were searched for in
+      the files each row names, and none is missing. A first pass found
+      two gaps: the owner's message of 2026-11-06 10:19 was quoted in no
+      governance file (now quoted in ADR-024's rule 7), and the ADR Log
+      never names the probe file (it says "temporary probe" and points to
+      item 19, where the file is named; the row's anchor is that phrase).
+      Not verified, by anything here: that the owner's words quoted in
+      ADR-025 are exact; what options A, B and C of that message said;
+      anything about real Apps Script (the unobserved list of the
+      2026-11-07 entry stands unchanged); that the handoff's statements
+      about the earlier part of the window are complete (see the limits
+      above).
+      Honesty notes. (1) "Verified", in the handoff's status table, always
+      says against what; no runtime file counts as verified by the owner's
+      own bar (real Apps Script) except for what the gate showed of
+      15_TruthEngine.js in two runs, on the shapes it probed. (2) The day
+      of the owner's hand-paste choice is not recoverable from the files;
+      ADR-025 gives the interval. (3) ADR-024's new rules 7 to 9 are the
+      builder's own practice, written down by the builder; no one has
+      ratified them. (4) The dated brackets of this checkpoint carry
+      2026-11-08, the day they were drafted. They were written into the
+      repository on 2026-11-09 (Asia/Kuala_Lumpur), after the third
+      resumption above, so the day applied differs from the day carried
+      (ADR-024, proposed rule 9).
+      REAL_GAS_REQUIRED / owner-side: nothing new is needed for this
+      checkpoint. The open real-GAS item is still the lock (the probe of
+      item 19); nothing else waits on it.
+      Scope respected: only 00_Project_State.js, 00_ADR_Log.js,
+      00_File_Map.js and 00_Project_Constitution.js were edited, and
+      Execution_OS_Checkpoint_Handoff_2026-11-08.md added; every runtime,
+      test and deployment file, 00_Business_Rules.js, the other Markdown
+      documents and the zip are byte-identical to the 2026-11-07 state; no
+      .claspignore or .clasp.json created or restored; nothing pushed to
+      or run in Apps Script by this checkpoint; the probe and the scratch
+      tools are not in the repository; 16_EventLog.js and every other new
+      file not started; Personal Life OS not touched. The checkpoint ends
+      here: a STOP.
   Engine checkpoints: (none yet — Observability/Config/Schema/
     Identity/EventDefinitions/Versioning/TruthEngine are all
     standalone Foundation files, not yet grouped into a Slice 0 Engine
@@ -1440,9 +1950,10 @@ file changed)
   the tree used. Same limit as ever: sandbox only, nothing verified in
   real GAS and nothing verified against a live Spreadsheet.
 
-NEXT ACTION (updated 2026-11-03 by its last paragraph, 2026-11-01 by the
-one before it, 2026-10-31 by the one before that and 2026-10-27 by the
-one before that; the rest is the
+NEXT ACTION (updated 2026-11-08 by its last paragraph, 2026-11-07 by the
+one before it, 2026-11-03 by the one before that, 2026-11-01 by the one
+before that, 2026-10-31 by the one before that and 2026-10-27 by the one
+before that; the rest is the
 2026-10-26 text, which superseded the 2026-10-24 text that counted six
 files done): Slice 0 — Foundation is in progress under a
 strict one-file-per-authorization checkpoint discipline, guarded by the
@@ -1516,4 +2027,45 @@ on items 9 to 18; (d) an explicit go-ahead for 16_EventLog.js, whose open
 questions are items 11-13. A bare "继续" resumes work that was already
 authorized and does not authorize a new file, the update in (b) included
 (ADR-020; the builder's reading, PROPOSED).
+Updated 2026-11-07: the project is at a STOP again. The gate ran a
+second time (2026-11-05) and nothing failed (PASS 7, FAIL 0, INCONCLUSIVE
+2, SKIPPED 1): P10 and P11 work in real GAS for the shapes the gate
+probes. The 2026-11-07 checkpoint (see its entry) then repaired the
+gate's Node suite (71 checks) and recorded the run; 15_TruthEngine.js
+and its test were touched only in comments. Nothing is half-written; the
+eight Node suites pass, 238/238, with no known-red suite. A new window
+starts from this state. What comes next is the owner's call, and none of
+it is started: (a) the owner-side probe for the lock (item 19; nothing
+else waits on it), and the owner's answers on the PROPOSED ADRs
+(ADR-021 to ADR-024) and on items 9 to 19, among them whether P11 stays
+(item 11) and the questions of item 15; (b) whether to fold the probe,
+or the part of it worth keeping, into the gate (ADR-023 option C): a
+change to the gate, so its own go-ahead and another real run; (c) an
+explicit go-ahead for 16_EventLog.js, whose open questions are items
+11-13. A bare "继续" resumes work that was already authorized and does
+not authorize a new file, the items in (b) and (c) included (ADR-020;
+the builder's reading, PROPOSED).
+Updated 2026-11-08: the project is at a STOP. The 2026-11-08 checkpoint
+was the owner's window-end request (audit, persistence, handoff): no code
+changed, nothing is half-written and nothing is in flight. The ADR Log now
+holds 26 ADRs: ADR-025 is Accepted (narrow), ADR-021 to ADR-024 are
+PROPOSED. A new window starts from
+Execution_OS_Checkpoint_Handoff_2026-11-08.md, which takes the place of
+Execution_OS_Checkpoint_Handoff_2026-11-01.md as the file to read first
+(the 2026-11-01 one stays as a snapshot of that day; its sections on the
+current state and the next steps are stale), then the five governance
+files. Its step 0 is the Checkpoint Integrity Gate (ADR-018): content-diff
+the working directory against the manifest in that handoff's Appendix A.
+What comes next is the owner's call, and none of it is started: (a) the
+owner-side probe for the lock (item 19; real Apps Script; nothing else
+waits on it); (b) the owner's answers on the PROPOSED ADRs (ADR-021 to
+ADR-024, and the three rules added to ADR-024 on 2026-11-08) and on items
+9 to 19, among them whether P11 stays (item 11), the questions of item 15,
+and whether clasp is ever adopted and .claspignore restored (items 14 and
+17); (c) whether to fold the probe, or the part of it worth keeping, into
+the gate (ADR-023 option C): a change to the gate, so its own go-ahead
+and another real run; (d) an explicit go-ahead for 16_EventLog.js, whose
+open questions are items 11-13. A bare "继续" resumes work that was
+already authorized and does not authorize a new file, the items in (c)
+and (d) included (ADR-020; the builder's reading, PROPOSED).
 */

@@ -22,7 +22,14 @@ added or renamed; the naming rules under DEPLOYMENT CONFIGURATION are
 now marked PROPOSED (ADR-021) and the TESTING entry points to ADR-023.
 Updated 2026-11-03: no file was added or renamed; the gate HAS now been
 run once in Apps Script and 15_TruthEngine.js was changed after it (the
-two entries below say so).)
+two entries below say so). Updated 2026-11-07: no file was added or
+renamed; the gate ran a second time, 2026-11-05, and nothing failed; the
+gate's Node suite and the comments of 15_TruthEngine.js were refreshed
+to match (the two entries below say so). Updated 2026-11-08: no source
+file was added or renamed; one record document was added
+(Execution_OS_Checkpoint_Handoff_2026-11-08.md), a RECORD DOCUMENTS block
+below now lists the Markdown documents at the repository root, and the
+.claspignore entry carries a note that the owner's copy does not have it.)
 Extension is .js per
 Steven's confirmed convention, confirmed 2026-09-12 to exactly match
 UEF v1.12's D8 decision (read directly, not from ecosystem memory).
@@ -73,9 +80,60 @@ added 2026-10-27)
                      90_UnitTests_Test.js, its Node-only test, is not.
                      Expected push set today: the 7 runtime files,
                      90_UnitTests.js and appsscript.json (9 files).
+                     [Note added 2026-11-08: this file is NOT in the
+                     owner's copy of the repository (00_Project_
+                     State.js item 17: the owner said the OS is not
+                     deployed yet, so there is none), and the real-GAS
+                     runs so far were made by pasting files into the
+                     Apps Script editor by hand (ADR-025), so no push
+                     set was ever applied by a tool. The description
+                     above is of the file as the 2026-10-27 checkpoint
+                     wrote it; it was not rebuilt or restored.]
   .clasp.json       NOT in this repository: it holds the owner's Apps
                      Script scriptId. Owner-held — see 00_Project_
                      State.js, WHAT IS STILL OPEN item 14.
+
+RECORD DOCUMENTS (repository root; not source files; clasp pushes only
+.js, .gs and .html files and appsscript.json, so none of these is ever
+pushed; listed 2026-11-08 — until then this file named only the
+Architecture document, although the others were already in the
+repository)
+  Execution_OS_Checkpoint_Handoff_2026-11-08.md
+                     The file a new window reads first: the status in
+                     six categories, the decisions of the window and
+                     where each is persisted, the implementation
+                     checkpoint, the exact next steps, what not to redo
+                     or assume, and the sha256 manifest of the
+                     repository. Added 2026-11-08.
+  Execution_OS_Checkpoint_Handoff_2026-11-01.md
+                     A snapshot of 2026-11-01. What it recorded about
+                     that day's decisions and audit still stands as
+                     history; its sections on the current state and the
+                     next steps are superseded by the 2026-11-08 file.
+  Execution_OS_Checkpoint_Handoff_2026-10-08.md
+                     The provenance record for the acceptance of
+                     ADR-000 to ADR-018. Its counts are stale.
+  Execution_OS_Checkpoint_Handoff_2026-10-08-1.md
+                     A byte-identical second copy of the file above. No
+                     file explains its origin; it was found at the
+                     2026-11-03 integrity check, listed there as not in
+                     the manifest, and left alone. Whether to delete it
+                     is the owner's call.
+  Execution_OS_Architecture_v0.8.md
+                     The reasoning record. Its header and section 9 are
+                     stale (00_Project_State.js item 3); where it
+                     conflicts with 00_ADR_Log.js, the ADR Log wins.
+  Execution_OS_Governance_Reconciliation_2026-09-12.md,
+  Execution_OS_Implementation_Master_Plan_2026-09-12.md,
+  Execution_OS_Post_Reconciliation_Closure_2026-09-12.md
+                     Background documents of 2026-09-12.
+  README.md          A one-line title.
+  60_Execution-main-updated.zip
+                     An older snapshot of the project (19 files and a
+                     directory entry, dated 2026-09-29 to 2026-10-09;
+                     listing read 2026-11-08). Not extracted into this
+                     tree and left alone. The whole-tree manifests
+                     since 2026-11-03 include it by hash.
 
 FOUNDATION (10-19)
   10_Config.js              Configuration only — Spreadsheet ID,
@@ -145,7 +203,14 @@ FOUNDATION (10-19)
                              in front (PROPOSED P10 and P11, ADR-022);
                              67/67 sandbox tests; the first real run
                              observed part of it in Apps Script, the
-                             new code has not been run there. Actual shape:
+                             new code has not been run there. [Updated
+                             2026-11-07: it has: the gate's second run,
+                             2026-11-05, passed PT.A and OS, the two
+                             checks the first run failed, and failed
+                             none. The code is unchanged since
+                             2026-11-03; only its comments, and those of
+                             its Node test, were refreshed 2026-11-07.]
+                             Actual shape:
                              append(tabName, record) only — no
                              Spreadsheet-ID parameter (it always uses
                              Config's Spreadsheet), append-only (no
@@ -274,7 +339,18 @@ TESTING (90-99)
                              now fail against the changed
                              15_TruthEngine.js because their fake
                              platform is out of date — 00_Project_
-                             State.js item 18.]
+                             State.js item 18.] [Updated 2026-11-07: it
+                             ran a second time, 2026-11-05, after the
+                             changed 15_TruthEngine.js was pasted in:
+                             PASS 7, FAIL 0, INCONCLUSIVE 2, SKIPPED 1,
+                             verdict INCOMPLETE; the gate itself is
+                             still unchanged. Its Node suite was
+                             repaired: 71 checks, all passing, two of
+                             them replaying the two real runs (item 18).
+                             The lock checks still cannot show anything
+                             from one execution; a temporary probe for
+                             that exists outside the repository and has
+                             not been run (item 19).]
                              It cannot show mutual exclusion between
                              two overlapping executions, or the effect
                              of flushing before the lock is released;

@@ -2,12 +2,20 @@
 =====================================================================
 EXECUTION OS — ADR LOG (project-local, per UEF S0.7)
 =====================================================================
-25 ADRs, ADR-000 through ADR-024 (updated 2026-11-01; it read "19
-ADRs, ADR-000 through ADR-018" until then). Updated 2026-11-03: no ADR
+26 ADRs, ADR-000 through ADR-025 (updated 2026-11-08; it read "25 ADRs,
+ADR-000 through ADR-024" from 2026-11-01 and "19 ADRs, ADR-000 through
+ADR-018" before that). Updated 2026-11-03: no ADR
 added and no Status changed; ADR-022 and ADR-023 gained dated notes (the
 first real-GAS run of the gate; choices P10 and P11 of the TruthEngine
-write path) and the PENDING DECISIONS list gained two lines. ADR-000
-through ADR-020
+write path) and the PENDING DECISIONS list gained two lines. Updated
+2026-11-07: no ADR added and no Status changed; ADR-022 and ADR-023
+gained dated notes (the second real-GAS run of the gate, in which P10
+and P11 held) and two PENDING DECISIONS lines were annotated. Updated
+2026-11-08: ADR-025 added (Status: Accepted, narrowly: how the files
+reached Apps Script for the real-GAS runs, by hand-paste, the owner's
+own choice); ADR-020 and ADR-021 gained dated notes, ADR-024 a dated
+note with three PROPOSED rules; the PENDING DECISIONS list was
+annotated; no other Status changed. ADR-000 through ADR-020 and ADR-025
 are Status: Accepted except where noted. ADR-021 through ADR-024 are
 Status: PROPOSED: they record engineering choices that are built or in
 use but that the owner has NOT confirmed — they are not approved
@@ -25,11 +33,13 @@ that Steven transmitted without changes. Treat "Accepted" as
 "sufficiently confirmed to proceed," not as "personally
 adjudicated word-for-word" — flagged for the next window's judgment.
 (ADR-019 and ADR-020 are the exception: each rests on the owner's own
-words, quoted in the entry.)
+words, quoted in the entry. ADR-025 rests on the owner's own words too,
+but they reach this file through a compaction summary, not the raw
+message: see its Evidence.)
 
 Full Evidence/Context/Options detail for each entry lives in
 Execution_OS_Architecture_v0.8.md section 9 (ADR-000 through
-ADR-014). ADR-015 through ADR-024's full Context/Question/Options/
+ADR-014). ADR-015 through ADR-025's full Context/Question/Options/
 Impact detail lives inline below, since they postdate v0.8 and have not
 yet been folded into the Architecture doc's section 9 — see
 00_Project_State.js's open items for that pending sync. This file
@@ -563,6 +573,21 @@ ADR-020 — One file per explicit authorization; every checkpoint ends with a ST
   Related ADRs: ADR-018 (the integrity gate that opens and closes each
   checkpoint); ADR-019.
   Review Trigger: only if the owner changes the instruction.
+  [Updated 2026-11-08: the owner restated the instruction, in the same
+  words, in his request of 2026-11-08 06:55: "完成 checkpoint、Governance/ADR
+  持久化及核对后就停止，不要继续 coding". In the same request he added:
+  "凡是本窗口已经形成、确认或需要持久化的治理/架构/工程决定，必须同步写入对应的
+  Governance 文件和 ADR Log；不要只写在 checkpoint 里。对于尚未最终确定的事项，
+  不要伪装成已批准决定，应明确标记为 pending/proposed。" Recorded here:
+  (1) that request is the authorization of the 2026-11-08 checkpoint: the
+  governance files, this log and one new handoff document, no code. What
+  it asked for is what that checkpoint did: every decision of the window
+  is in a Governance file and in this log, and an unsettled one is marked
+  PENDING or PROPOSED, never Accepted. (2) That this content rule is
+  standing for every later checkpoint is the builder's reading, PROPOSED;
+  BR-9 in 00_Business_Rules.js already says that governance stays
+  synchronized with every code change. The Status of this ADR is
+  unchanged: Accepted.]
 
 ADR-021 — Deployment packaging for the Apps Script project: the clasp ignore list, the manifest, and the file-naming rules they imply
   Status: PROPOSED — implemented 2026-10-27 under the owner's
@@ -627,6 +652,16 @@ ADR-021 — Deployment packaging for the Apps Script project: the clasp ignore l
   Review Trigger: the owner's first real clasp status or push; the
   owner's confirmation or change of any rule above; a clasp release
   that reads its ignore file differently.
+  [Updated 2026-11-08: ADR-025 records that the owner chose to put files
+  into Apps Script by pasting them by hand. Nothing in this ADR was
+  exercised by that route: no clasp status, no clasp push, and no
+  .claspignore (it is not in the owner's copy; item 17). Its naming rules
+  were met once, by a failure: the first paste included the Node-only
+  _Test.js files and the project did not load ("SyntaxError: Identifier
+  'Config' has already been declared", in 10_Config_Test.gs); with those
+  files and the 00_ files removed it ran. That is what the rule that a
+  _Test.js file is never put into the project predicts; it does not make
+  the rule the owner's. This ADR stays PROPOSED.]
 
 ADR-022 — TruthEngine write path: one append-only, plain-text-protected, script-locked row write (15_TruthEngine.js, choices P1 to P11; P10 and P11 added 2026-11-03)
   Status: PROPOSED — built 2026-10-26 under the owner's authorization
@@ -634,8 +669,11 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   confirmed. [Updated 2026-11-03: it was run in real Apps Script once,
   through the gate (ADR-023), and the run found two defects; P10 and P11
   were added at the owner's go-ahead of that day, and the new code has
-  been run only in the Node sandbox.] | Date: 2026-10-26; recorded
-  2026-11-01; updated 2026-11-03
+  been run only in the Node sandbox. Updated 2026-11-07: the new code was
+  then run in real Apps Script, 2026-11-05 00:29, through the same gate;
+  nothing failed and both fixes held for the shapes the gate probes, see
+  the second OBSERVED paragraph below.] | Date: 2026-10-26; recorded
+  2026-11-01; updated 2026-11-03 and 2026-11-07
   Context: 00_File_Map.js defines 15_TruthEngine.js only as the "generic
   validated safe append/write owner, per UCR6". UCR6's primary text is
   not in this repository (open item 12), so "validated" and "safe" had
@@ -712,6 +750,33 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   or "@" followed by an expression (only "+3" and "-7" were probed); mutual
   exclusion between two overlapping executions; flush-before-release;
   getLastRow() on long-lived tabs; latency under contention.
+  [Added 2026-11-07: of the "NOT observed" items just above, the first is
+  now observed, see the next paragraph; the others stand.]
+  OBSERVED IN REAL APPS SCRIPT, second run (2026-11-05 00:29
+  Asia/Kuala_Lumpur, the same gate, GATE_VERSION unchanged, run from the
+  editor against the same Spreadsheet after the owner pasted the changed
+  15_TruthEngine.js over the old one; evidence: the owner's copy of that
+  Execution log). Result: PASS 7, FAIL 0, INCONCLUSIVE 2, SKIPPED 1,
+  INFO 4, 21245 ms; verdict INCOMPLETE. (1) The control re-typed the same
+  23 of 36 strings. (2) PT.A: 24 of 24 shapes came back as the identical
+  string, including the three that failed on 2026-11-03: with P11's
+  apostrophe in front, "=1+1", the SUM formula and "'quoted" were kept as
+  typed; PT.B: 12 of 12. The P11 hypothesis held, and the fallback of
+  refusing such strings is not needed on this evidence. (3) The
+  50001-character string was refused by P10 before the lock, with this
+  file's own error, nothing was written, and the next append landed on
+  the next row; the defect of 2026-11-03 is closed. The platform's own
+  limit was not reached, so exactly 50000 characters and the counting
+  unit are still not observed. (4) One append took 807 to 1465 ms with no
+  contention (554 to 1465 ms over both runs), so P3's 10000 ms covers
+  roughly seven to eighteen queued appends of that length; contention is
+  still unobserved. (5) A second script-lock object was again granted
+  while the first was held, so the same three lock checks were
+  INCONCLUSIVE, INCONCLUSIVE and SKIPPED; the lock's mutual exclusion,
+  release paths, timeout and flush-before-release remain UNOBSERVED. A
+  temporary probe for two overlapping executions has been written and
+  delivered outside the repository; it has not been run (00_Project_State.js
+  item 19). All of P1 to P11 remain PROPOSED.
   Impact: every later file that writes a row calls TruthEngine.append; a
   caller that wants a numeric cell must pass a number, because a
   numeric-looking string is stored as text; the caller serializes
@@ -726,7 +791,12 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   alternative of refusing such strings); someone with UEF v1.12
   checks UCR6 (item 12); [updated 2026-11-03: the first real run of the
   gate is done; the second, with the new 15_TruthEngine.js pasted in, is
-  the test of P10 and P11 — PT.A and OS are expected to turn PASS].
+  the test of P10 and P11 — PT.A and OS are expected to turn PASS;
+  updated 2026-11-07: the second run is done, and PT.A and OS did turn
+  PASS]. What is open now: the owner's confirmation of P1 to P11; the
+  lock questions, which need two overlapping executions (a temporary
+  probe exists, item 19, not run); exactly 50000 characters and the
+  counting unit.
   Related ADRs: ADR-012 (own Spreadsheet); ADR-023 (the gate that
   observes it); ADR-018; BR-10.
   Review Trigger: a real-GAS observation that contradicts P6 or P7 (a
@@ -735,7 +805,8 @@ ADR-022 — TruthEngine write path: one append-only, plain-text-protected, scrip
   needing update-by-key. [Added 2026-11-03: a gate run in which PT.A still
   fails after P11; a platform failure inside setValues() that leaves part
   of a row for any other reason; a cell limit or counting unit different
-  from the one P10 assumes.]
+  from the one P10 assumes. Updated 2026-11-07: the first of these did
+  not happen on 2026-11-05, so only the other two stand.]
 
 ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   Status: PROPOSED — the owner asked for a GAS-native verification file
@@ -744,9 +815,11 @@ ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   test-scaffolding exception and the file name are the builder's choices
   and await confirmation (00_Project_State.js item 15). [The gate had NOT
   been run in Apps Script when this was recorded, 2026-11-01. Updated
-  2026-11-03: the owner ran it once, 2026-11-03; see Evidence.] | Date:
+  2026-11-03: the owner ran it once, 2026-11-03; see Evidence. Updated
+  2026-11-07: run a second time, 2026-11-05, with nothing failing; see
+  Evidence.] | Date:
   requested 2026-10-27; delivered 2026-10-31; recorded 2026-11-01;
-  updated 2026-11-03
+  updated 2026-11-03 and 2026-11-07
   Context: the owner's practice is that every OS is made to work in real
   GAS ("我所有的os都是在gas跑通的", 2026-10-27; 00_Project_Constitution.js,
   PLATFORM CONSTRAINTS). Every test so far runs in a Node sandbox against
@@ -812,6 +885,28 @@ ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   checks assume the pre-fix engine and the pre-observation platform
   (00_Project_State.js item 18). That file was outside the 2026-11-03
   authorization and was not edited.]
+  [Updated 2026-11-07, the second real run: 2026-11-05 00:29
+  Asia/Kuala_Lumpur, by hand again, after the owner pasted the changed
+  15_TruthEngine.js over the old one; evidence is the owner's copy of the
+  Execution log. The gate was unchanged. Result: PASS 7, FAIL 0,
+  INCONCLUSIVE 2, SKIPPED 1, INFO 4, 21245 ms; verdict INCOMPLETE; the
+  Spreadsheet was left with its one tab. PT.A and OS, the two FAILs of
+  the first run, now PASS (ADR-022 has the details); the three lock
+  checks came out INCONCLUSIVE, INCONCLUSIVE and SKIPPED again, for the
+  same reason. The OS wording issue predicted above is real: OS PASSED
+  with the text "so the lock was released" although the engine refused
+  the oversize string before it took the lock. The text was NOT changed:
+  that is a change to the gate, its own authorization and another real run
+  (00_Project_State.js item 15). The gate's Node suite is repaired (item
+  18): 71 checks, all passing. Its fake platform now reproduces the
+  control of both real runs, and two of its checks replay the two real
+  logs through the gate (the statuses, the counts and the OS line "moved
+  from 2 to 3" of the first run; PASS 7, FAIL 0 and verdict INCOMPLETE of
+  the second). It was tried against 16 planted defects in throw-away
+  copies (8 in its fake, 6 in the engine, 2 in the gate); each made at
+  least one check fail. The 52-breakage run of the gate's own checks was
+  repeated against the repaired suite, on the unchanged gate: 52 caught,
+  0 survived.]
   Impact: the first real run is the first real-GAS evidence this project
   would have, for P3, P6, P7 and the lock behavior. One execution cannot
   show — and REAL_GAS_REQUIRED keeps listing — mutual exclusion between
@@ -824,19 +919,30 @@ ADR-023 — Real-GAS verification by a hand-run gate function (90_UnitTests.js)
   the lock. Only option (C) of the Options above, two overlapping
   executions, can test mutual exclusion and the lock's release paths; it
   is still not built (PENDING DECISIONS).]
+  [Added 2026-11-07: the second run added no new kind of limit: it again
+  could not test the lock, for the same reason. What is now observed
+  twice, and so reproducible: one execution can take the script lock
+  twice, and what the control re-types (23 of 36).]
   Next Steps: owner side — push, set EXEC_OS_SPREADSHEET_ID, run once,
   return the whole Execution log (00_Project_State.js item 14f); decide
   item 15 (the exception, the file name, whether the file stays in the
   pushed set after its first run). [Updated 2026-11-03: the run is done;
   next, the owner pastes the new 15_TruthEngine.js in and runs the gate
   again; the Node suite of the gate needs an authorized update (item
-  18).]
+  18). Updated 2026-11-07: both are done, the second run on 2026-11-05
+  and the repair of the Node suite. Open: item 15's questions (the
+  exception, the file name, whether the file stays in the pushed set);
+  the lock checks, for which a temporary probe exists outside the
+  repository (item 19) and option (C) is still not decided.]
   Related ADRs: ADR-022 (the subject); ADR-021 (it is a pushed file);
   ADR-012 and BR-10 (the guard); ADR-018; ADR-024.
   Review Trigger: the first real run's log; the owner declining the
   exception or renaming the file. [Added 2026-11-03: the second run's log;
   any check that reports PASS for a reason the run cannot support, as the
-  OS wording above might.]
+  OS wording above might. Updated 2026-11-07: the second run's log came
+  in and did show that case (OS PASS, "so the lock was released", on a
+  path that never takes the lock); the next log to review is the one from
+  the temporary probe, if the owner runs it (item 19).]
 
 ADR-024 — Verification and reporting discipline applied at every checkpoint
   Status: PROPOSED — a practice in use since the first checkpoint and
@@ -890,6 +996,91 @@ ADR-024 — Verification and reporting discipline applied at every checkpoint
   Related ADRs: ADR-018 (the integrity gate); ADR-022; ADR-023.
   Review Trigger: the owner's first real-GAS result; any case where a
   rule here made a checkpoint report something wrong.
+  [Updated 2026-11-08: the numbers in rule 3 are those of 2026-11-01 and
+  are out of date. 15_TruthEngine.js is checked by 46 planted defects
+  (the 28 plus 18 for P10 and P11, 2026-11-03; repeated on the
+  2026-11-07 files, 46 caught), the gate by 52 (repeated 2026-11-07, on
+  the repaired Node suite, 52 caught), and the gate's repaired Node
+  suite, 90_UnitTests_Test.js, by 16 (8 in its fake platform, 6 in the
+  engine, 2 in the gate; 2026-11-07, all caught). The caveat of rule 3
+  stands: the builder chose each selection. Three more rules follow,
+  PROPOSED like the rest of this ADR, from the practice of the
+  2026-11-02 to 2026-11-08 window; the owner has not ratified them:
+    7. When the owner cannot test or review, the builder prepares a
+       change in a scratch copy outside the repository and writes it
+       into the repository only after one explicit go-ahead that names
+       the files (ADR-020); the checkpoint entry says when the change
+       was prepared and when it was applied. It began with the owner's
+       message of 2026-11-06 10:19, as a compaction summary carries it:
+       "我现在在送外卖，不方便做测试。你能继续开发吗？" (I am delivering
+       food now and cannot test. Can you keep developing?). Bare "继续"
+       messages followed; the rule is the builder's way of keeping to
+       ADR-020 while he could not look.
+    8. A fake platform that has been made to reproduce a real log is
+       reported as pinned to that log: a replay of the log passes by
+       construction, shows nothing about shapes the real run did not
+       probe, and only a new real run can show a surprise.
+    9. A dated bracket carries the day it was drafted; where the day it
+       was applied differs, the checkpoint entry says so.]
+
+ADR-025 — How files reach Apps Script for the real-GAS runs so far: the owner pastes them by hand; clasp is not used
+  Status: Accepted, narrowly. It rests on the owner's own choice (quoted
+  below) and covers how files reached Apps Script for the two real runs
+  of the gate; it is not a decision about the deployment route for later
+  work | Date: after 2026-11-02 (the owner's zip was supplied) and before
+  2026-11-03 06:56 (the time of the first paste log); the day is not
+  recoverable from the files. Recorded as an ADR 2026-11-08
+  Context: ADR-021 (PROPOSED) designs a clasp route. At the 2026-11-03
+  integrity check the owner's copy of the repository did not contain
+  .claspignore, although the 2026-11-01 handoff's manifest lists it
+  (00_Project_State.js item 17). The owner's explanation: the OS is not
+  deployed yet, so there is none ("这个OS还没部署，所以没有.claspignore"). In
+  the same message he asked which of the options A, B and C was best
+  ("你觉得ABC哪一个好？").
+  Question: how do the repository's files get into the Apps Script project
+  for the first real runs of the gate, with no .claspignore and no
+  .clasp.json?
+  Options Considered: three options, A, B and C, were on the table. Their
+  texts are NOT on disk and are not reconstructed here. The only
+  identification of A is the owner's own gloss, "手动贴" (paste by hand).
+  Decision: A, the owner's choice.
+  Evidence: the owner's words, as the list of his messages in a
+  compaction summary of the working session carries them: "A，手动贴。你可以
+  输出代码，因为我会在电脑里备份一份" (A, paste by hand. You can output code,
+  because I will keep a backup on my computer). The raw message is not on
+  disk, so the wording is only as exact as that list; if the owner
+  corrects it, what this ADR rests on is the choice of hand-paste. The
+  route was then used for both real runs. 2026-11-03: the first paste
+  included the Node-only _Test.js files and the project did not load
+  ("SyntaxError: Identifier 'Config' has already been declared", in
+  10_Config_Test.gs); with them and the 00_ files removed it ran (PASS 5,
+  FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4). 2026-11-05: the changed
+  15_TruthEngine.js was pasted over the old one (PASS 7, FAIL 0,
+  INCONCLUSIVE 2, SKIPPED 1, INFO 4). Both are recorded in
+  00_Project_State.js (item 14g, the 2026-11-03 and 2026-11-07 entries).
+  Impact: (1) the builder supplies files and the owner pastes them; what
+  is pasted is the set ADR-021 calls the expected push set (the 7 runtime
+  files, 90_UnitTests.js and appsscript.json), never a _Test.js file and
+  never a 00_ file. (2) Nothing compares what is in the editor with the
+  repository: the integrity gate (ADR-018) checks the repository, not the
+  Apps Script project, and a log does not prove which version was pasted
+  (the log of 2026-11-05 carries no hash of the file). The owner's
+  statement is the only evidence of what ran. (3) The clasp route is set
+  aside, not decided against. Items 14a, 14b, 14e and 17 stay open,
+  ADR-021 stays PROPOSED and unexercised, and a first real clasp push is
+  still the owner's call. (4) The owner's reason, that he keeps a backup
+  on his computer, is recorded as given. It is not read as an
+  instruction about where any file lives, and no repository file changed
+  because of it.
+  Next Steps: none for the decision itself. Owner side, unchanged: the
+  probe of item 19, if he chooses to run it, is pasted by hand too, and
+  deleted afterwards.
+  Related ADRs: ADR-021 (the clasp route set aside); ADR-023 (the gate is
+  pasted and run by hand; this ADR makes that the stated practice);
+  ADR-018 (what its check does not cover); ADR-020.
+  Review Trigger: the owner decides to deploy for real (a first clasp
+  push, a trigger, a web app); the owner changes or withdraws the choice;
+  a wrong or mixed-up paste produces a misleading log.
 
 ---------------------------------------------------------------------
 PENDING DECISIONS — NO DECISION HAS BEEN MADE. NOT ADRs, NOT ACCEPTED,
@@ -910,28 +1101,42 @@ detail (EP2); this list only points to it.
   - UCR6's primary text, which is not in this repository. (item 12)
   - Owner-side deployment: .clasp.json and the scriptId, comparing with
     the live project before the first push, the manifest time zone,
-    EXEC_OS_SPREADSHEET_ID. (item 14; ADR-021)
+    EXEC_OS_SPREADSHEET_ID. (item 14; ADR-021) [2026-11-08: the route
+    used so far is hand-paste, the owner's choice (ADR-025, Accepted,
+    narrow). Whether clasp is ever adopted, and whether .claspignore is
+    restored (item 17), is still open.]
   - The gate's test-scaffolding exception, the file name
     90_UnitTests.js, and whether the file stays in the pushed set after
-    its first run. (item 15; ADR-023)
+    its first run. (item 15; ADR-023) [2026-11-08: also the wording of
+    OS's PASS text, "so the lock was released", which on the P10 path
+    describes a lock that is never taken (item 15, 2026-11-07 note). A
+    change to 90_UnitTests.js, so its own go-ahead and another real run;
+    not made.]
   - Whether to build a protocol with two overlapping executions
     (mutual exclusion; flush-before-release). Not built; only if the
     owner asks. (ADR-023) [2026-11-03: the first run showed one execution
     cannot test the lock, because the platform grants a second lock
-    object there.]
+    object there. 2026-11-07: the second run showed the same; a temporary
+    probe for it was written outside the repository and has not been run
+    (item 19); folding what is worth keeping into the gate is still only
+    if the owner asks.]
   - (added 2026-11-03) Whether P11's apostrophe prefix is kept or such
     strings are refused instead, decided after the gate is re-run with
     the new 15_TruthEngine.js (group PT.A); and whether the P7 grid-growth
     guard stays now that the platform grows the grid by itself. (item 11;
-    ADR-022)
+    ADR-022) [2026-11-07: the re-run is done and PT.A passed with P11, so
+    on this evidence refusing such strings is not needed; whether P11 is
+    kept is still the owner's call. The P7 question is unchanged.]
   - (added 2026-11-03) Updating the gate's Node suite,
     90_UnitTests_Test.js, which now has 26 failing checks against the new
     engine and was outside the 2026-11-03 authorization. Needs its own
-    go-ahead (ADR-020). (item 18; ADR-023)
+    go-ahead (ADR-020). (item 18; ADR-023) [2026-11-07: done in the
+    2026-11-07 checkpoint, under its own go-ahead: 71 checks, all
+    passing.]
   - Where the scratch verification tools live: outside the repository
     so far. (item 16)
   - Syncing Execution_OS_Architecture_v0.8.md section 9, and its stale
-    header, with ADR-013 through ADR-024. (item 3)
+    header, with ADR-013 through ADR-025. (item 3)
   - RUNTIME numbering: a missing 26_ReferenceEngine.js against the
     existing 26_WeekViewEngine.js, and the shared-directory numbering
     question. (the notes in 00_File_Map.js)

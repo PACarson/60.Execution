@@ -22,6 +22,20 @@ Code status (updated 2026-10-31): Slice 0 — Foundation in progress.
   checks against the changed engine because its fake platform is out of
   date (00_Project_State.js item 18). The new code has been run only in
   the Node sandbox. 00_Project_State.js is the authoritative record.
+  Updated 2026-11-07: the sentence "The new code has been run only in the
+  Node sandbox" is superseded. The gate ran a second time in real Apps
+  Script on 2026-11-05 and nothing failed (PASS 7, FAIL 0, INCONCLUSIVE
+  2, SKIPPED 1); PT.A and OS, the two checks the first run failed,
+  passed. The gate's own suite is repaired: 71/71. The seven runtime
+  suites are still 167/167. What real GAS has still not shown is whether
+  the script lock keeps two overlapping executions apart (00_Project_
+  State.js items 15 and 19). 00_Project_State.js is the authoritative
+  record.
+  Updated 2026-11-08: no code changed. The window-end audit found the
+  code as it was on 2026-11-07, nothing half-written, and the lock still
+  unobserved. ADR-025 was added: how files reach Apps Script for the
+  real-GAS runs (the owner pastes them by hand; his own choice).
+  00_Project_State.js is the authoritative record.
 Governance updated 2026-11-01 (no code changed): a WORKING RULES block
   (ADR-019, ADR-020, both Accepted) and a PROPOSED PRACTICES block
   (ADR-021 to ADR-024, not ratified by the owner) were added below. The
@@ -177,7 +191,34 @@ editor — but it has not been run, so the sentence above still holds.
 Updated 2026-11-03: it was run once, on 2026-11-03, and so a record now
 exists that 15_TruthEngine.js, and the files it calls, ran in real GAS
 (00_Project_State.js, 2026-11-03 entry). The sentence above is about
-every Execution OS file; it is no longer true of that one.)
+every Execution OS file; it is no longer true of that one. Updated
+2026-11-07: the gate ran a second time, on 2026-11-05, after the engine
+was fixed, and nothing failed.)
+
+Observed platform facts (added 2026-11-08). What real Apps Script did in
+the two runs of the gate, 2026-11-03 and 2026-11-05, in Execution's own
+Spreadsheet (locale en_US, Spreadsheet time zone Asia/Shanghai, script
+time zone Asia/Singapore). The evidence tiers and the detail are in
+ADR-022, ADR-023 and 00_Project_State.js. These facts hold for what those
+runs probed and for those dates; none is a Constitution rule.
+  - In a cell formatted as plain text, a string starting with "=" was
+    still evaluated as a formula and a leading apostrophe was consumed.
+    15_TruthEngine.js's P11 (one extra leading apostrophe) brought the
+    probed strings back as typed (24 of 24 in group PT.A, 12 of 12 in
+    PT.B). A control cell with no protection re-typed 23 of the 36
+    probed shapes.
+  - A 50001-character string made setValues() fail, and with no guard the
+    failed call left a row behind; P10 refuses such a string before any
+    write. The platform's own message names a limit of 50000 characters
+    in a single cell.
+  - One execution was granted a second script-lock object while it held
+    the first, so the lock cannot be tested from one execution.
+  - A raw write one row past the grid succeeded and the grid grew by
+    itself.
+  Not observed: whether the lock keeps two overlapping executions apart,
+  its release paths and timeout text, flush before release, exactly 50000
+  characters and the unit counted, strings starting with "+", "-" or "@"
+  beyond "+3" and "-7", long-lived tabs, latency under contention.
 
 CHECKPOINT INTEGRITY GATE (ADR-018, added here 2026-10-08)
 ---------------------------------------------------------------------
@@ -211,6 +252,24 @@ down as ADRs:
     statement and a STOP; the next file starts only on its own
     go-ahead. The owner's words, 2026-11-01: "完成 checkpoint、
     Governance/ADR 持久化及核对后就停止，不要继续 coding".
+  [Updated 2026-11-08: the owner restated the ADR-020 words in his request
+  of 2026-11-08 06:55 and added that every decision of a window is to be
+  persisted in a Governance file and the ADR Log, not only in a
+  checkpoint, an unsettled one marked pending or PROPOSED (ADR-020's note
+  quotes it). A third item is Accepted, narrowly: ADR-025, how files reach
+  Apps Script for the real-GAS runs so far. The owner pastes them by
+  hand; clasp (ADR-021, PROPOSED) is set aside, not decided against.]
+
+WORKING CONVENTIONS (added here 2026-11-08; not ADRs). They were carried
+only by the 2026-11-01 handoff (its section 7), as conventions of this
+project. The messages they came from are not on disk, so who first asked
+for each cannot be shown from the files.
+  - Replies to the owner are in Chinese. Governance files and handoff
+    documents are in English.
+  - Do not address the owner by name. The older governance text uses two
+    names for him; neither is to be used in replies or in new text.
+  - A bare "继续" resumes work that was already authorized and does not
+    authorize a new file (ADR-020; the builder's reading, PROPOSED).
 
 PROPOSED PRACTICES (ADR-021 to ADR-024 — PROPOSED, NOT ratified by the
 owner; added here 2026-11-01)
@@ -226,13 +285,18 @@ State.js (WHAT IS STILL OPEN):
   - ADR-022 the TruthEngine write path, choices P1 to P11 in
     15_TruthEngine.js's header (P10 and P11 added 2026-11-03). Item 11.
   - ADR-023 real-GAS verification by the hand-run gate function in
-    90_UnitTests.js. The gate was run once, 2026-11-03 (it had not been
-    run when this was written, 2026-11-01). Item 15.
+    90_UnitTests.js. The gate was run twice, 2026-11-03 and 2026-11-05
+    (it had not been run when this was written, 2026-11-01). Item 15.
   - ADR-024 verification and reporting discipline: a sandbox result is
     never reported as a real-GAS result; evidence is labelled by tier;
     test code that guards a write path is checked by planting defects;
     harness bugs, production defects and the builder's own mistakes are
     reported separately. Item 9 could take it into a Definition of Done.
+    Rules 7 to 9 were added 2026-11-08 (also PROPOSED): prepare a change
+    outside the repository when the owner cannot test or review and
+    apply it only on a go-ahead that names the files; report a fake
+    platform tuned to a real log as pinned to it; date a bracket with
+    its drafting day.
 
 DISAMBIGUATION NOTE
 ---------------------------------------------------------------------
