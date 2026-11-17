@@ -16,6 +16,10 @@ Changed:     2026-11-03, at the owner's explicit go-ahead, after the first
               otherwise unchanged. The new behavior has been exercised only
               in the Node sandbox; the next real run of the gate is its
               first test on the real platform.
+              [Updated 2026-11-07: it was run on the real platform on
+              2026-11-05 and nothing failed; see the second OBSERVED
+              block below. Only comments in this header changed on
+              2026-11-07, at the owner's go-ahead; no line of code.]
 
 GOVERNANCE SOURCE REVIEW, performed before writing any code (per
 ADR-018's Checkpoint Integrity Gate and this project's standing "no
@@ -91,10 +95,10 @@ and .../spreadsheet/sheet, fetched 2026-10-25:
     the platform grows the grid by itself, and a leading "=" IS read as a
     formula even inside a plain-text cell.]
 
-OBSERVED IN REAL APPS SCRIPT -- this project's own gate, 90_UnitTests.js
-(GATE_VERSION 2026-10-31), run once, 2026-11-03 06:59 Asia/Kuala_Lumpur
-(2026-11-02T22:59Z), against Execution's own Spreadsheet "60.Execution"
-(one tab; locale en_US; Spreadsheet time zone Asia/Shanghai; script time
+OBSERVED IN REAL APPS SCRIPT, first run -- this project's own gate,
+90_UnitTests.js (GATE_VERSION 2026-10-31), run 2026-11-03 06:59
+Asia/Kuala_Lumpur (2026-11-02T22:59Z), against Execution's own
+Spreadsheet "60.Execution" (one tab; locale en_US; Spreadsheet time zone Asia/Shanghai; script time
 zone Asia/Singapore). Evidence: the owner's copy of that Execution log.
 Result: PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4, 17010 ms.
   - Control: the same 36 probe strings written WITHOUT the plain-text
@@ -132,9 +136,39 @@ Result: PASS 5, FAIL 2, INCONCLUSIVE 2, SKIPPED 1, INFO 4, 17010 ms.
     SKIPPED). Mutual exclusion between two overlapping executions, and
     flush-before-release, remain UNOBSERVED.
 
+OBSERVED IN REAL APPS SCRIPT, second run -- the same gate, 90_UnitTests.js
+(GATE_VERSION 2026-10-31, unchanged), run again after this file got P10
+and P11, 2026-11-05 00:29 Asia/Kuala_Lumpur (2026-11-04T16:29Z), against
+the same Spreadsheet "60.Execution" (one tab; locale en_US; Spreadsheet
+time zone Asia/Shanghai; script time zone Asia/Singapore). Evidence: the
+owner's copy of that Execution log. Result: PASS 7, FAIL 0, INCONCLUSIVE
+2, SKIPPED 1, INFO 4, 21245 ms; verdict INCOMPLETE (nothing failed, but
+three lock checks could not conclude).
+  - Control: the same 23 of 36 strings were re-typed as in the first run.
+  - PT.A: 24 of 24 shapes came back as the identical string (getValues,
+    getDisplayValues, format @), including the three that failed in the
+    first run: with P11's apostrophe in front, "=1+1", the SUM formula
+    and "'quoted" were kept as typed. PT.B: 12 of 12. So P11 holds on the
+    real platform for the shapes the gate probes.
+  - A 50001-character string was refused BEFORE the lock, by P10, with
+    this file's own error ("a string of 50001 characters when written
+    (one cell holds at most 50000)"); nothing was written, and the next
+    normal append landed on the next row. The platform's own limit was
+    not reached this time, so exactly 50000 characters and the unit the
+    platform counts in (UTF-16 units or bytes) are still NOT observed.
+  - Time per append with no contention: 807 to 1465 ms over eight timed
+    calls (the five 13-string-cell appends: min 821, avg 961, max 1049
+    ms); over both runs, 554 to 1465 ms.
+  - A second getScriptLock() object again acquired the lock while the
+    first still held it, so the same three lock checks came out
+    INCONCLUSIVE, INCONCLUSIVE and SKIPPED. Mutual exclusion between two
+    overlapping executions, the release paths, the timeout and flush-
+    before-release remain UNOBSERVED.
+
 PROPOSED -- this file's own choices. P1 to P9 were not evidenced by
 anything above when they were made; the 2026-11-03 observations bear on
-P3, P6 and P7 and are the evidence for P10 and P11 (each says so).
+P3, P6 and P7 and are the evidence for P10 and P11 (each says so). The
+2026-11-05 run bears on P3, P10 and P11 again.
 Each is isolated (one constant or one private function) so it can be
 changed without touching the rest. (P10 and P11 are one constant each
 plus a few lines in _toCell_; P10 also adjusts the advice in the
@@ -159,6 +193,10 @@ message that _prepare_ throws.)
       [Observed 2026-11-03: one append took 554 to 929 ms with no
       contention, so 10000 ms covers about ten queued appends of that
       length. Behavior under contention is unobserved.]
+      [Observed 2026-11-05: 807 to 1465 ms over eight timed calls, again
+      with no contention; over both runs 554 to 1465 ms, so 10000 ms
+      covers roughly seven to eighteen queued appends of that length.
+      Behavior under contention is still unobserved.]
   P4  Return value { tabName, rowNumber } -- the minimum a caller or a
       test needs in order to verify the write.
   P5  Generic validation only, no entity knowledge. tabName is a
@@ -216,6 +254,11 @@ message that _prepare_ throws.)
       could let one through that the platform then refuses, with the
       partial row again. Any OTHER platform failure inside setValues()
       that lands part of a row is also still possible; see DOES NOT OWN.
+      [Updated 2026-11-07: OBSERVED 2026-11-05: the 50001-character
+      string was refused here, before the lock, nothing was written, and
+      the next append landed on the next row. The platform's own limit
+      was not reached, so the two "Not observed" points above stand:
+      exactly 50000, and the unit the platform counts in.]
   P11 Apostrophe prefix (added 2026-11-03). A string whose first
       character is "=" or an apostrophe is written with one apostrophe
       in front. Evidence: OBSERVED (above): with '@' set and one
@@ -233,6 +276,11 @@ message that _prepare_ throws.)
       "+3" and "-7", both kept as typed). If a later run shows one of
       those being evaluated, the first-character rule in
       _needsTextMarker_ is the one place to widen.
+      [Updated 2026-11-07: OBSERVED 2026-11-05: the hypothesis held.
+      With the prefix, "=1+1", the SUM formula and "'quoted" came back
+      as typed (PT.A 24 of 24, PT.B 12 of 12), so the fallback is not
+      needed on this evidence. The "+", "-" or "@" point just above is
+      unchanged: still not probed beyond "+3" and "-7".]
 
 Write sequence (everything after step 3 runs inside the lock, and any
 failure still releases it):
@@ -260,8 +308,8 @@ yet -- 16_EventLog's "append/read" must settle where its read half
 lives; this file exposes none, per EP3); atomicity across rows or tabs
 (none exists on this platform); cleaning up a partly written row after
 a platform failure inside setValues() (the gate saw one on 2026-11-03;
-P10 removes that one cause; this file is append-only and deletes
-nothing).
+P10 removes that one cause, and the 2026-11-05 run saw none; this file is
+append-only and deletes nothing).
 
 Depends on:  10_Config.js (Spreadsheet ID) and 60_Observability.js
               (AlertService, UCR3). NOT 11_Schema.js, 12_Identity.js,

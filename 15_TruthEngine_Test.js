@@ -9,9 +9,9 @@ LockService behavior.
 
 Behaviors of the fake that are ASSUMPTIONS, not facts about real
 Sheets; every check that leans on one says so. Since 2026-11-03 some
-can be compared with the project's first real Apps Script run (the gate,
-90_UnitTests.js, in Execution's own Spreadsheet, locale en_US); the
-notes say which:
+can be compared with the project's two real Apps Script runs (the gate,
+90_UnitTests.js, in Execution's own Spreadsheet, locale en_US; 2026-11-03
+and 2026-11-05); the notes say which:
   (a) COERCION MODEL: a string written to a cell that is not formatted
       '@' is "re-typed" when it looks like a number, a date or a
       formula, and a leading apostrophe is consumed. OBSERVED in real
@@ -28,12 +28,14 @@ notes say which:
       timeout would). Models mutual exclusion; real LockService
       behavior is REAL_GAS_REQUIRED. (OBSERVED: within ONE execution a
       second lock object is granted, which this fake does not do.)
-  (d) THE P11 HYPOTHESIS, not observed anywhere: when the first
-      apostrophe is consumed, what is left is kept as TEXT and not
-      parsed again ("'=1+1" is stored as the text "=1+1"). Checks (61),
-      (62) and (45b) lean on it for their read-back half; the half that
-      asserts what the engine SENDS does not. The next real gate run
-      (PT.A) is the test of (d).
+  (d) THE P11 HYPOTHESIS: when the first apostrophe is consumed, what is
+      left is kept as TEXT and not parsed again ("'=1+1" is stored as
+      the text "=1+1"). It was a hypothesis, not observed anywhere, when
+      checks (61), (62) and (45b) were written; the second real gate run
+      (2026-11-05) OBSERVED it holding for the shapes the gate probes
+      (PT.A 24 of 24), so the fake agrees with the real platform on
+      them. For any other string it is still an assumption. The half of
+      those checks that asserts what the engine SENDS never leaned on it.
   (e) CELL LIMIT: setValues() with a string of more than 50000
       characters throws the platform's message after the cells before
       it in the row have been written. The limit, the message and the
@@ -1055,25 +1057,28 @@ console.log('');
 console.log(passed + ' passed, ' + failed + ' failed (sandbox logic only)');
 console.log('');
 console.log('REAL_GAS_REQUIRED -- not verified by anything above, and cannot be from this environment.');
-console.log('Items seen once in real Apps Script on 2026-11-03 (the gate, 90_UnitTests.js, Execution\'s own');
-console.log('Spreadsheet, locale en_US) are marked OBSERVED; what is listed is what is STILL open:');
+console.log('Items seen in real Apps Script on 2026-11-03 and 2026-11-05 (the gate, 90_UnitTests.js, run twice in');
+console.log('Execution\'s own Spreadsheet, locale en_US) are marked OBSERVED; what is listed is what is STILL open:');
 console.log('  - LockService.getScriptLock().waitLock(): real mutual exclusion between two overlapping');
 console.log('    executions, and the real timeout behavior/message (checks 34-41 only model it).');
-console.log('    OBSERVED so far: in ONE execution a second lock object is granted while the first holds');
-console.log('    the lock, so one execution cannot show it');
+console.log('    OBSERVED so far, in both runs: in ONE execution a second lock object is granted while the');
+console.log('    first holds the lock, so one execution cannot show it');
 console.log('  - that SpreadsheetApp.flush() before releaseLock() really makes the next lock holder\'s');
 console.log('    getLastRow() see the new row (no overwritten row under concurrent triggers)');
-console.log('  - P11 (checks 61-66): that a leading apostrophe really makes the platform keep a "="-led or');
-console.log('    apostrophe-led string as typed (assumption d). OBSERVED instead: with \'@\' alone it does not.');
-console.log('    The next gate run, group PT.A, is the test; if it fails, the fallback is to refuse such strings');
+console.log('  - OBSERVED 2026-11-05, no longer open for the shapes the gate probes: P11 (checks 61-66) works --');
+console.log('    with one apostrophe in front, "=1+1", a SUM formula and "\'quoted" came back as typed (assumption');
+console.log('    d held; PT.A 24 of 24, PT.B 12 of 12). OBSERVED 2026-11-03, before the prefix: with \'@\' alone it');
+console.log('    did not keep them');
 console.log('  - strings that start with "+", "-" or "@" and then go on like an expression (the gate probed');
 console.log('    only "+3" and "-7", both kept)');
 console.log('  - OBSERVED, no longer open: \'@\' + one setValues() keeps 33 of 36 probe shapes (every number-,');
 console.log('    date-, time-, hash- and TRUE/false-shaped one); the platform grows the grid by itself (check');
-console.log('    49 models a case it does not have; the guard stays); one append took 554-929 ms, no contention');
-console.log('  - the cell limit (checks 55-60): OBSERVED that 50001 characters is refused after part of the row');
-console.log('    landed; NOT observed: that exactly 50000 is accepted, and the unit the platform counts in');
-console.log('    (P10 counts UTF-16 units)');
+console.log('    49 models a case it does not have; the guard stays); one append took 554-1465 ms over the two');
+console.log('    runs, no contention');
+console.log('  - the cell limit (checks 55-60): OBSERVED 2026-11-03 that the platform refused 50001 characters');
+console.log('    after part of the row had landed; OBSERVED 2026-11-05 that with P10 the engine refused it first');
+console.log('    and nothing was written; NOT observed: that exactly 50000 is accepted, and the unit the');
+console.log('    platform counts in (P10 counts UTF-16 units)');
 console.log('  - getLastRow() on real tabs (pre-formatted blank rows, stray content far below the data)');
 console.log('  - per-append latency under real contention, against the PROPOSED 10000 ms LOCK_WAIT_MS');
 console.log('');
